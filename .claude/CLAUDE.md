@@ -32,3 +32,5 @@ scripts/           ← Automation scripts
 ## Database
 
 Local Postgres via Docker Compose. Do not start or stop Docker — the user manages it manually.
+
+For production we use Neon. 
