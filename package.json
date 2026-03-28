@@ -14,6 +14,7 @@
 		"lint": "biome check .",
 		"lint:fix": "biome check . --write",
 		"type-check": "pnpm -r type-check",
+		"dev": "pnpm --filter @zanalytics/api --filter @zanalytics/web -r dev",
 		"dev:api": "pnpm --filter @zanalytics/api dev",
 		"dev:web": "pnpm --filter @zanalytics/web dev",
 		"db:generate": "dotenv -- pnpm --filter @zanalytics/db db:generate",

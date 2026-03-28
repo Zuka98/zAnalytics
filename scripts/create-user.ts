@@ -1,4 +1,4 @@
-import { db, users } from "@zanalytics/db";
+import { db, users } from "../packages/db/src/index";
 import { hash } from "bcrypt-ts";
 import { eq } from "drizzle-orm";
 
