@@ -1,6 +1,6 @@
-import type { FastifyInstance } from "fastify";
-import { eq } from "drizzle-orm";
 import { products } from "@zanalytics/db/schema";
+import { eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../db.js";
 
 export async function productRoutes(app: FastifyInstance) {
@@ -10,17 +10,20 @@ export async function productRoutes(app: FastifyInstance) {
 	});
 
 	// Get a single product
-	app.get<{ Params: { id: string } }>("/v1/products/:id", async (request, reply) => {
-		const [product] = await db
-			.select()
-			.from(products)
-			.where(eq(products.id, request.params.id));
+	app.get<{ Params: { id: string } }>(
+		"/v1/products/:id",
+		async (request, reply) => {
+			const [product] = await db
+				.select()
+				.from(products)
+				.where(eq(products.id, request.params.id));
 
-		if (!product) {
-			return reply.status(404).send({ error: "Product not found" });
-		}
-		return product;
-	});
+			if (!product) {
+				return reply.status(404).send({ error: "Product not found" });
+			}
+			return product;
+		},
+	);
 
 	// Create a product
 	app.post<{
