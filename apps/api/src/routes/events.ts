@@ -1,6 +1,6 @@
-import type { FastifyInstance } from "fastify";
-import { and, eq } from "drizzle-orm";
 import { events, installs, products } from "@zanalytics/db/schema";
+import { and, eq } from "drizzle-orm";
+import type { FastifyInstance } from "fastify";
 import { db } from "../db.js";
 
 interface EventBody {
@@ -13,8 +13,13 @@ interface EventBody {
 
 export async function eventRoutes(app: FastifyInstance) {
 	app.post<{ Body: EventBody }>("/v1/events", async (request, reply) => {
-		const { product: productKey, installId, eventName, version, properties } =
-			request.body;
+		const {
+			product: productKey,
+			installId,
+			eventName,
+			version,
+			properties,
+		} = request.body;
 
 		// Look up product by key
 		const [product] = await db
@@ -23,7 +28,9 @@ export async function eventRoutes(app: FastifyInstance) {
 			.where(eq(products.key, productKey));
 
 		if (!product) {
-			return reply.status(400).send({ error: `Unknown product: ${productKey}` });
+			return reply
+				.status(400)
+				.send({ error: `Unknown product: ${productKey}` });
 		}
 
 		// Insert event

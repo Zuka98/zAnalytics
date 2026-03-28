@@ -6,8 +6,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, "../../../.env") });
 
 import Fastify from "fastify";
-import { productRoutes } from "./routes/products.js";
 import { eventRoutes } from "./routes/events.js";
+import { productRoutes } from "./routes/products.js";
 
 const app = Fastify({ logger: true });
 

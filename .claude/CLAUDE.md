@@ -14,21 +14,65 @@ This project is an analytics platform for tracking usage across multiple Chrome 
 
 ```
 apps/
-  web/             ← Next.js (App Router) — admin panel (shadcn/ui lives here, not a separate package)
-  api/             ← Fastify — standalone API server
+  web/                          ← Next.js (App Router) — admin panel
+    src/
+      app/
+        (app)/                  ← Protected routes (requires auth)
+          dashboard/
+        (auth)/                 ← Auth routes (login)
+        api/auth/[...nextauth]/ ← NextAuth API route
+      components/
+        shadcn/                 ← Unmodified shadcn primitives
+        auth/                   ← Auth-specific components
+      lib/
+        auth/                   ← NextAuth config (edge-config, config, roles)
+        utils.ts
+      types/                    ← Type augmentations (e.g. next-auth.d.ts)
+    middleware.ts               ← Route protection (edge runtime)
+  api/                          ← Fastify — standalone API server
+    src/
+      routes/                   ← Route handlers (events, products)
+      db.ts                     ← DB connection
 packages/
-  db/              ← Drizzle ORM + Postgres — shared database layer
-plans/             ← Implementation plans (AI-assisted)
-docs/              ← Human-written reference documentation
-scripts/           ← Automation scripts
+  db/                           ← Drizzle ORM + Postgres — shared database layer
+    src/
+      schema.ts                 ← Table definitions (users, products, installs, events)
+      index.ts                  ← DB client + re-exports
+      migrate.ts                ← Migration runner
+    drizzle/                    ← Generated SQL migrations
+plans/                          ← Implementation plans (AI-assisted)
+docs/                           ← Human-written reference documentation
+scripts/                        ← Automation scripts (e.g. create-user.ts)
 ```
 
 ## Conventions
 
 - **Package naming**: `@zanalytics/*`
-- **Env vars**: All in `.env` at root. Never committed.
+- **Env vars**: All in `.env` at root. Never committed. Apps load via symlink or `dotenv-cli`.
 - **pnpm**: Never install global packages. All deps go into workspace packages.
+- **shadcn components**: Installed to `apps/web/src/components/shadcn/` (not `ui/`). These are unmodified primitives.
+- **Custom components**: `apps/web/src/components/<feature>/` (e.g. `auth/`).
+
+## Auth
+
+- NextAuth v5 (Auth.js) with JWT sessions and Credentials provider.
+- Invite-only — users are created via `pnpm create:user <email> <password> [name] [role]`.
+- Middleware at `apps/web/middleware.ts` protects all routes except `/login` and `/api`.
+- Edge-safe config in `edge-config.ts`, full config (with DB access) in `config.ts`.
 
 ## Database
 
-Local Postgres via Docker Compose. Do not start or stop Docker — the user manages it manually.
+- **Local**: Postgres via Docker Compose. Do not start or stop Docker — the user manages it manually.
+- **Production**: Neon.
+- **Schema**: `packages/db/src/schema.ts` — tables: `users`, `products`, `installs`, `events`.
+- **Migrations**: `pnpm db:generate` then `pnpm db:migrate`.
+
+## Scripts
+
+- `pnpm dev` — start API + web concurrently
+- `pnpm dev:api` / `pnpm dev:web` — start individually
+- `pnpm build` — build all packages
+- `pnpm type-check` — typecheck all packages
+- `pnpm lint` / `pnpm lint:fix` — Biome check
+- `pnpm db:generate` / `pnpm db:migrate` / `pnpm db:studio` — Drizzle commands
+- `pnpm create:user` — create admin panel user
