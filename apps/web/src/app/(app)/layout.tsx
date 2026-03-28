@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AppHeader } from "@/components/layout/app-header";
 import { auth } from "@/lib/auth";
 
 export default async function AppLayout({
@@ -12,5 +13,10 @@ export default async function AppLayout({
 		redirect("/login");
 	}
 
-	return <>{children}</>;
+	return (
+		<>
+			<AppHeader />
+			<main>{children}</main>
+		</>
+	);
 }
