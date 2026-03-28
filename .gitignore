@@ -7,6 +7,12 @@ build/
 out/
 *.tsbuildinfo
 
+# Next.js
+.next/
+
+# Fastify
+.fastify/
+
 # Environment
 .env
 .env.local
