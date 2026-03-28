@@ -1,3 +1,4 @@
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
 	jsonb,
 	pgEnum,
@@ -7,6 +8,22 @@ import {
 	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
+
+// --- Users ---
+
+export const users = pgTable("users", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	email: text("email").notNull().unique(),
+	password: text("password").notNull(),
+	name: text("name"),
+	role: text("role").notNull().default("user"),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
 
 // --- Products ---
 
@@ -74,3 +91,8 @@ export const events = pgTable("events", {
 		.notNull()
 		.defaultNow(),
 });
+
+// --- Inferred Types ---
+
+export type User = InferSelectModel<typeof users>;
+export type NewUser = InferInsertModel<typeof users>;
