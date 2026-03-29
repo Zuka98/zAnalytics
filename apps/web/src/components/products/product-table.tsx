@@ -2,6 +2,7 @@
 
 import type { Product } from "@zanalytics/db";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/shadcn/badge";
 import {
@@ -48,7 +49,14 @@ export function ProductTable({ products }: { products: Product[] }) {
 				<TableBody>
 					{products.map((product) => (
 						<TableRow key={product.id}>
-							<TableCell className="font-medium">{product.name}</TableCell>
+							<TableCell>
+								<Link
+									href={`/dashboard/${product.id}`}
+									className="font-medium underline-offset-4 hover:underline"
+								>
+									{product.name}
+								</Link>
+							</TableCell>
 							<TableCell>
 								<code className="text-xs">{product.key}</code>
 							</TableCell>

@@ -1,5 +1,5 @@
 import { db, events, installs, products } from "@zanalytics/db";
-import { count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 
 export async function getProductById(id: string) {
 	const [product] = await db
@@ -29,17 +29,147 @@ export async function getProductInstallStats(productId: string) {
 	return stats;
 }
 
-export async function getProductRecentEvents(productId: string, limit = 50) {
+export async function getProductEvents(opts: {
+	productId: string;
+	eventType?: string | null;
+	installId?: string | null;
+	version?: string | null;
+	limit: number;
+	offset: number;
+}) {
+	const conditions = [eq(events.productId, opts.productId)];
+	if (opts.eventType) {
+		conditions.push(eq(events.eventName, opts.eventType));
+	}
+	if (opts.installId) {
+		conditions.push(
+			sql`${events.installId}::text ilike ${`%${opts.installId}%`}`,
+		);
+	}
+	if (opts.version) {
+		conditions.push(sql`${events.version}::text ilike ${`%${opts.version}%`}`);
+	}
+	const where = and(...conditions);
+
+	const [rows, [{ value: total }]] = await Promise.all([
+		db
+			.select({
+				id: events.id,
+				eventName: events.eventName,
+				installId: events.installId,
+				version: events.version,
+				occurredAt: events.occurredAt,
+			})
+			.from(events)
+			.where(where)
+			.orderBy(desc(events.occurredAt))
+			.limit(opts.limit)
+			.offset(opts.offset),
+		db.select({ value: count() }).from(events).where(where),
+	]);
+
+	return { rows, total };
+}
+
+export async function getProductEventTypes(productId: string) {
 	return db
-		.select({
-			id: events.id,
-			eventName: events.eventName,
-			installId: events.installId,
-			version: events.version,
-			occurredAt: events.occurredAt,
-		})
+		.select({ eventName: events.eventName })
 		.from(events)
 		.where(eq(events.productId, productId))
-		.orderBy(desc(events.occurredAt))
-		.limit(limit);
+		.groupBy(events.eventName)
+		.orderBy(events.eventName);
+}
+
+function daysAgoDate(days: number) {
+	const d = new Date();
+	d.setHours(0, 0, 0, 0);
+	d.setDate(d.getDate() - days);
+	return d;
+}
+
+export async function getProductDailyInstalls(
+	productId: string,
+	days: number | null,
+) {
+	const base = db
+		.select({
+			date: sql<string>`date_trunc('day', ${installs.firstSeenAt})::date`.as(
+				"date",
+			),
+			installs:
+				sql<number>`count(*) filter (where ${installs.status} != 'uninstalled')`.as(
+					"installs",
+				),
+			uninstalls:
+				sql<number>`count(*) filter (where ${installs.status} = 'uninstalled')`.as(
+					"uninstalls",
+				),
+		})
+		.from(installs);
+
+	const filtered =
+		days === null
+			? base.where(eq(installs.productId, productId))
+			: base.where(
+					and(
+						eq(installs.productId, productId),
+						gte(installs.firstSeenAt, daysAgoDate(days)),
+					),
+				);
+
+	return filtered
+		.groupBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`)
+		.orderBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`);
+}
+
+export async function getProductEventBreakdown(
+	productId: string,
+	days: number | null,
+) {
+	const base = db
+		.select({
+			eventName: events.eventName,
+			count: count().as("count"),
+		})
+		.from(events);
+
+	const filtered =
+		days === null
+			? base.where(eq(events.productId, productId))
+			: base.where(
+					and(
+						eq(events.productId, productId),
+						gte(events.occurredAt, daysAgoDate(days)),
+					),
+				);
+
+	return filtered.groupBy(events.eventName).orderBy(desc(count()));
+}
+
+export async function getProductDailyEvents(
+	productId: string,
+	days: number | null,
+) {
+	const base = db
+		.select({
+			date: sql<string>`date_trunc('day', ${events.occurredAt})::date`.as(
+				"date",
+			),
+			count: count().as("count"),
+		})
+		.from(events);
+
+	const filtered =
+		days === null
+			? base.where(eq(events.productId, productId))
+			: base.where(
+					and(
+						eq(events.productId, productId),
+						gte(events.occurredAt, daysAgoDate(days)),
+					),
+				);
+
+	return filtered
+		.groupBy(sql`date_trunc('day', ${events.occurredAt})::date`)
+		.orderBy(sql`date_trunc('day', ${events.occurredAt})::date`);
 }
