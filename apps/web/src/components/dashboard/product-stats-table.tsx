@@ -44,7 +44,7 @@ export function ProductStatsTable({ products }: ProductStatsTableProps) {
 			</TableHeader>
 			<TableBody>
 				{products.map((p) => (
-					<TableRow key={p.id}>
+					<TableRow key={p.id} className="cursor-pointer">
 						<TableCell>
 							<Link
 								href={`/dashboard/${p.id}`}
