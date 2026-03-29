@@ -67,10 +67,10 @@ export function ProductFormDialog({
 					</DialogDescription>
 				</DialogHeader>
 				<form
-						key={product?.id ?? "create"}
-						onSubmit={handleSubmit}
-						className="space-y-4"
-					>
+					key={product?.id ?? "create"}
+					onSubmit={handleSubmit}
+					className="space-y-4"
+				>
 					<div className="space-y-2">
 						<Label htmlFor="name">Name</Label>
 						<Input
