@@ -23,4 +23,4 @@ Add an analytics dashboard showing aggregate stats across all products and per-p
 
 - [x] **4.1** Run `pnpm type-check`, `pnpm build`, `pnpm lint`
 - [x] **4.2** Manual test: dashboard shows correct counts, product rows link to detail, detail page shows events
-- [ ] **4.3** `/checkout`, `/commit`, `/push`, `/create-pr but without Claude Code being the Collaborator`
+- [x] **4.3** `/checkout`, `/commit`, `/push`, `/create-pr but without Claude Code being the Collaborator`
