@@ -1,5 +1,6 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import {
+	index,
 	jsonb,
 	pgEnum,
 	pgTable,
@@ -69,28 +70,43 @@ export const installs = pgTable(
 			.notNull()
 			.defaultNow(),
 	},
-	(t) => [unique("uq_product_install").on(t.productId, t.installId)],
+	(t) => [
+		unique("uq_product_install").on(t.productId, t.installId),
+		index("idx_installs_status").on(t.status),
+		index("idx_installs_product_id").on(t.productId),
+		index("idx_installs_product_status").on(t.productId, t.status),
+		index("idx_installs_first_seen_at").on(t.firstSeenAt),
+	],
 );
 
 // --- Events ---
 
-export const events = pgTable("events", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	productId: uuid("product_id")
-		.notNull()
-		.references(() => products.id),
-	installId: uuid("install_id"),
-	eventName: text("event_name").notNull(),
-	occurredAt: timestamp("occurred_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-	version: text("version"),
-	properties: jsonb("properties").$type<Record<string, unknown>>(),
-	source: text("source"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.notNull()
-		.defaultNow(),
-});
+export const events = pgTable(
+	"events",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		productId: uuid("product_id")
+			.notNull()
+			.references(() => products.id),
+		installId: uuid("install_id"),
+		eventName: text("event_name").notNull(),
+		occurredAt: timestamp("occurred_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		version: text("version"),
+		properties: jsonb("properties").$type<Record<string, unknown>>(),
+		source: text("source"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("idx_events_product_id").on(t.productId),
+		index("idx_events_occurred_at").on(t.occurredAt),
+		index("idx_events_product_occurred").on(t.productId, t.occurredAt),
+		index("idx_events_event_name").on(t.eventName),
+	],
+);
 
 // --- Inferred Types ---
 

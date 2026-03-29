@@ -15,6 +15,13 @@
 			"when": 1774712275515,
 			"tag": "0001_absurd_wildside",
 			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "7",
+			"when": 1774826339726,
+			"tag": "0002_cultured_cloak",
+			"breakpoints": true
 		}
 	]
 }
