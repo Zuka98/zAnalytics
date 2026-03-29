@@ -66,7 +66,11 @@ export function ProductFormDialog({
 							: "Add a new product to track."}
 					</DialogDescription>
 				</DialogHeader>
-				<form onSubmit={handleSubmit} className="space-y-4">
+				<form
+						key={product?.id ?? "create"}
+						onSubmit={handleSubmit}
+						className="space-y-4"
+					>
 					<div className="space-y-2">
 						<Label htmlFor="name">Name</Label>
 						<Input
