@@ -20,11 +20,6 @@ interface RecentEventsTableProps {
 	events: EventRow[];
 }
 
-function truncateId(id: string | null) {
-	if (!id) return "—";
-	return `${id.slice(0, 8)}…`;
-}
-
 export function RecentEventsTable({ events }: RecentEventsTableProps) {
 	if (events.length === 0) {
 		return (
@@ -51,7 +46,7 @@ export function RecentEventsTable({ events }: RecentEventsTableProps) {
 							<Badge variant="outline">{e.eventName}</Badge>
 						</TableCell>
 						<TableCell className="font-mono text-muted-foreground">
-							{truncateId(e.installId)}
+							{e.installId ?? "—"}
 						</TableCell>
 						<TableCell>{e.version ?? "—"}</TableCell>
 						<TableCell className="text-muted-foreground">
