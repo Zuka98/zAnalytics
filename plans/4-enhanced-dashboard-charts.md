@@ -34,4 +34,4 @@ Upgrade the dashboard with time-series charts, trend comparisons, and richer ana
 - [x] **5.1** Run `pnpm type-check`, `pnpm build`, `pnpm lint`
 - [x] **5.2** Manual test: dashboard shows trend arrows on stat cards, charts render with mock data, date range tabs switch between 7d/30d/90d
 - [x] **5.3** Manual test: product detail page shows install trend chart and event breakdown bar chart
-- [ ] **5.4** `/checkout`, `/commit`, `/push`, `/create-pr`
+- [x] **5.4** `/checkout`, `/commit`, `/push`, `/create-pr`

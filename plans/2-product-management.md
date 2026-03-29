@@ -44,8 +44,8 @@ Add a product management interface to the admin panel. Users can create, list, e
 - [x] **8.1** Run `pnpm type-check` across all packages
 - [x] **8.2** Run `pnpm build` to verify the web app builds
 - [x] **8.3** Run `pnpm lint` and fix any issues
-- [ ] **8.4** Manual test: navigate to `/products` — should see empty list with "Add Product" button
-- [ ] **8.5** Manual test: create a product — should appear in the table
-- [ ] **8.6** Manual test: edit a product — should update in the table
-- [ ] **8.7** Manual test: delete a product — should be removed after confirmation
-- [ ] **8.8** `/checkout`, `/commit`, `/push`, `/create-pr`
+- [x] **8.4** Manual test: navigate to `/products` — should see empty list with "Add Product" button
+- [x] **8.5** Manual test: create a product — should appear in the table
+- [x] **8.6** Manual test: edit a product — should update in the table
+- [x] **8.7** Manual test: delete a product — should be removed after confirmation
+- [x] **8.8** `/checkout`, `/commit`, `/push`, `/create-pr`

@@ -37,4 +37,4 @@ Optimize database queries, add missing indexes, consolidate round trips, enforce
 - [x] **5.1** Run `pnpm type-check`, `pnpm build`, `pnpm lint`
 - [x] **5.2** Manual test: dashboard loads with correct stats, charts, and trend comparisons across all date ranges
 - [x] **5.3** Manual test: product detail page loads with charts, events table, filtering, and pagination
-- [ ] **5.4** `/checkout`, `/commit`, `/push`, `/create-pr`
+- [x] **5.4** `/checkout`, `/commit`, `/push`, `/create-pr`
