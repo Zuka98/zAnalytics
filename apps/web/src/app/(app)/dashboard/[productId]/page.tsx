@@ -1,6 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { DateRangeTabs } from "@/components/dashboard/date-range-tabs";
+import { EventBreakdownChart } from "@/components/dashboard/event-breakdown-chart";
+import { EventsChart } from "@/components/dashboard/events-chart";
+import { EventsTableControls } from "@/components/dashboard/events-table-controls";
+import { InstallsChart } from "@/components/dashboard/installs-chart";
 import { RecentEventsTable } from "@/components/dashboard/recent-events-table";
 import {
 	Card,
@@ -10,34 +16,75 @@ import {
 } from "@/components/shadcn/card";
 import {
 	getProductById,
+	getProductDailyEvents,
+	getProductDailyInstalls,
+	getProductEventBreakdown,
+	getProductEvents,
+	getProductEventTypes,
 	getProductInstallStats,
-	getProductRecentEvents,
 } from "@/lib/queries/product-detail";
 
 export default async function ProductDetailPage({
 	params,
+	searchParams,
 }: {
 	params: Promise<{ productId: string }>;
+	searchParams: Promise<Record<string, string | undefined>>;
 }) {
 	const { productId } = await params;
-	const [product, stats, events] = await Promise.all([
+	const sp = await searchParams;
+
+	const VALID_RANGES = ["1", "7", "30", "90", "all"];
+	const rangeKey =
+		sp.range && VALID_RANGES.includes(sp.range) ? sp.range : "30";
+	const days = rangeKey === "all" ? null : Number(rangeKey);
+	const chartLabel =
+		days === null ? "all time" : days === 1 ? "today" : `${days}d`;
+
+	const eventType = sp.eventType || null;
+	const installId = sp.installId || null;
+	const version = sp.version || null;
+	const pageSize = [10, 25, 50, 100].includes(Number(sp.pageSize))
+		? Number(sp.pageSize)
+		: 25;
+	const page = Math.max(1, Number(sp.page) || 1);
+
+	const [
+		product,
+		stats,
+		{ rows: eventRows, total: totalEvents },
+		eventTypes,
+		dailyInstalls,
+		dailyEvents,
+		eventBreakdown,
+	] = await Promise.all([
 		getProductById(productId),
 		getProductInstallStats(productId),
-		getProductRecentEvents(productId),
+		getProductEvents({
+			productId,
+			eventType,
+			installId,
+			version,
+			limit: pageSize,
+			offset: (page - 1) * pageSize,
+		}),
+		getProductEventTypes(productId),
+		getProductDailyInstalls(productId, days),
+		getProductDailyEvents(productId, days),
+		getProductEventBreakdown(productId, days),
 	]);
 
 	if (!product) notFound();
 
-	const totalEvents = events.length;
 	const statCards = [
 		{ label: "Active", value: stats.active },
 		{ label: "Inactive", value: stats.inactive },
 		{ label: "Uninstalled", value: stats.uninstalled },
-		{ label: "Recent Events", value: totalEvents },
+		{ label: "Total Events", value: totalEvents },
 	];
 
 	return (
-		<div className="mx-auto max-w-4xl p-8">
+		<div className="mx-auto max-w-5xl p-8">
 			<Link
 				href="/dashboard"
 				className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -46,9 +93,14 @@ export default async function ProductDetailPage({
 				Back to Dashboard
 			</Link>
 
-			<h1 className="mb-6 text-2xl font-semibold tracking-tight">
-				{product.name}
-			</h1>
+			<div className="mb-6 flex items-center justify-between">
+				<h1 className="text-2xl font-semibold tracking-tight">
+					{product.name}
+				</h1>
+				<Suspense>
+					<DateRangeTabs current={rangeKey} />
+				</Suspense>
+			</div>
 
 			<div className="grid gap-4 sm:grid-cols-4">
 				{statCards.map((s) => (
@@ -66,8 +118,37 @@ export default async function ProductDetailPage({
 			</div>
 
 			<div className="mt-8">
-				<h2 className="mb-4 text-lg font-medium">Recent Events</h2>
-				<RecentEventsTable events={events} />
+				<InstallsChart data={dailyInstalls} label={chartLabel} />
+			</div>
+
+			<div className="mt-4 grid gap-4 md:grid-cols-2">
+				<EventsChart data={dailyEvents} label={chartLabel} />
+				<EventBreakdownChart
+					data={eventBreakdown.map((r) => ({
+						eventName: r.eventName,
+						[product.name]: r.count,
+					}))}
+					productNames={[product.name]}
+					label={chartLabel}
+				/>
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Events</h2>
+				<Suspense>
+					<EventsTableControls
+						eventTypes={eventTypes.map((t) => t.eventName)}
+						currentType={eventType}
+						currentInstallId={installId}
+						currentVersion={version}
+						currentPageSize={pageSize}
+						currentPage={page}
+						totalEvents={totalEvents}
+					/>
+				</Suspense>
+				<div className="mt-3">
+					<RecentEventsTable events={eventRows} />
+				</div>
 			</div>
 		</div>
 	);
