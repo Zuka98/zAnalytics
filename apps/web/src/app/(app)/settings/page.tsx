@@ -23,9 +23,7 @@ export default async function SettingsPage() {
 					<dl className="space-y-4 text-sm">
 						<div>
 							<dt className="text-muted-foreground">Name</dt>
-							<dd className="mt-0.5 font-medium">
-								{user?.name ?? "Not set"}
-							</dd>
+							<dd className="mt-0.5 font-medium">{user?.name ?? "Not set"}</dd>
 						</div>
 						<Separator />
 						<div>
@@ -35,9 +33,7 @@ export default async function SettingsPage() {
 						<Separator />
 						<div>
 							<dt className="text-muted-foreground">Role</dt>
-							<dd className="mt-0.5 font-medium capitalize">
-								{user?.role}
-							</dd>
+							<dd className="mt-0.5 font-medium capitalize">{user?.role}</dd>
 						</div>
 					</dl>
 				</CardContent>
