@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AppShell } from "@/components/layout/app-shell";
 import { auth } from "@/lib/auth";
 
 export default async function AppLayout({
@@ -12,5 +13,9 @@ export default async function AppLayout({
 		redirect("/login");
 	}
 
-	return <>{children}</>;
+	return (
+		<AppShell userName={session.user?.name} userEmail={session.user?.email}>
+			{children}
+		</AppShell>
+	);
 }

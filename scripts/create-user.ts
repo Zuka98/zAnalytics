@@ -1,6 +1,6 @@
-import { db, users } from "../packages/db/src/index";
 import { hash } from "bcrypt-ts";
 import { eq } from "drizzle-orm";
+import { db, users } from "../packages/db/src/index";
 
 async function main() {
 	const [, , email, password, name, role] = process.argv;
