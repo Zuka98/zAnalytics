@@ -1,50 +1,5 @@
 import { db, events, installs, products } from "@zanalytics/db";
-import { count, eq, gte, sql } from "drizzle-orm";
-
-export async function getOverviewStats() {
-	const [[productCount], [activeCount], [uninstallCount]] = await Promise.all([
-		db.select({ value: count() }).from(products),
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(eq(installs.status, "active")),
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(eq(installs.status, "uninstalled")),
-	]);
-
-	return {
-		totalProducts: productCount.value,
-		activeInstalls: activeCount.value,
-		uninstalls: uninstallCount.value,
-	};
-}
-
-export async function getProductStats() {
-	const rows = await db
-		.select({
-			id: products.id,
-			name: products.name,
-			platform: products.platform,
-			activeCount:
-				sql<number>`coalesce((select count(*) from installs where installs.product_id = ${products.id} and installs.status = 'active'), 0)`.as(
-					"active_count",
-				),
-			uninstallCount:
-				sql<number>`coalesce((select count(*) from installs where installs.product_id = ${products.id} and installs.status = 'uninstalled'), 0)`.as(
-					"uninstall_count",
-				),
-			lastActivity:
-				sql<Date | null>`(select max(events.occurred_at) from events where events.product_id = ${products.id})`.as(
-					"last_activity",
-				),
-		})
-		.from(products)
-		.orderBy(products.name);
-
-	return rows;
-}
+import { count, gte, sql } from "drizzle-orm";
 
 function daysAgoDate(days: number) {
 	const d = new Date();
@@ -53,72 +8,95 @@ function daysAgoDate(days: number) {
 	return d;
 }
 
+function tsLit(d: Date) {
+	return sql.raw(`'${d.toISOString()}'::timestamptz`);
+}
+
+export async function getProductStats() {
+	return db
+		.select({
+			id: products.id,
+			name: products.name,
+			platform: products.platform,
+			activeCount:
+				sql<number>`count(${installs.id}) filter (where ${installs.status} = 'active')`.as(
+					"active_count",
+				),
+			uninstallCount:
+				sql<number>`count(${installs.id}) filter (where ${installs.status} = 'uninstalled')`.as(
+					"uninstall_count",
+				),
+			lastActivity: sql<Date | null>`max(${events.occurredAt})`.as(
+				"last_activity",
+			),
+		})
+		.from(products)
+		.leftJoin(installs, sql`${installs.productId} = ${products.id}`)
+		.leftJoin(events, sql`${events.productId} = ${products.id}`)
+		.groupBy(products.id, products.name, products.platform)
+		.orderBy(products.name);
+}
+
 /**
- * Count new installs and uninstalls that occurred within [from, to).
- * - newInstalls: installs first seen in this window
- * - uninstalls: installs whose status changed to 'uninstalled' in this window
- * - totalEvents: events that occurred in this window
+ * Count new installs, uninstalls, and events within [from, to) in a single query.
  */
 async function getPeriodStats(from: Date, to: Date) {
-	const fromLit = sql.raw(`'${from.toISOString()}'::timestamptz`);
-	const toLit = sql.raw(`'${to.toISOString()}'::timestamptz`);
+	const fromLit = tsLit(from);
+	const toLit = tsLit(to);
 
-	const [[newInstalls], [uninstallCount], [eventCount]] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(
-				sql`${installs.firstSeenAt} >= ${fromLit} and ${installs.firstSeenAt} < ${toLit}`,
-			),
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(
-				sql`${installs.status} = 'uninstalled' and ${installs.updatedAt} >= ${fromLit} and ${installs.updatedAt} < ${toLit}`,
-			),
-		db
-			.select({ value: count() })
-			.from(events)
-			.where(
-				sql`${events.occurredAt} >= ${fromLit} and ${events.occurredAt} < ${toLit}`,
-			),
-	]);
+	const [row] = await db
+		.select({
+			newInstalls:
+				sql<number>`(select count(*) from installs where ${installs.firstSeenAt} >= ${fromLit} and ${installs.firstSeenAt} < ${toLit})`.as(
+					"new_installs",
+				),
+			uninstalls:
+				sql<number>`(select count(*) from installs where ${installs.status} = 'uninstalled' and ${installs.updatedAt} >= ${fromLit} and ${installs.updatedAt} < ${toLit})`.as(
+					"uninstalls",
+				),
+			totalEvents:
+				sql<number>`(select count(*) from events where ${events.occurredAt} >= ${fromLit} and ${events.occurredAt} < ${toLit})`.as(
+					"total_events",
+				),
+		})
+		.from(sql`(select 1) as _`);
 
 	return {
-		newInstalls: newInstalls.value,
-		uninstalls: uninstallCount.value,
-		totalEvents: eventCount.value,
+		newInstalls: Number(row.newInstalls),
+		uninstalls: Number(row.uninstalls),
+		totalEvents: Number(row.totalEvents),
 	};
 }
 
 export async function getOverviewStatsWithTrend(days: number | null) {
-	// Totals that are always shown regardless of period
-	const [[activeTotal], [uninstallTotal]] = await Promise.all([
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(eq(installs.status, "active")),
-		db
-			.select({ value: count() })
-			.from(installs)
-			.where(eq(installs.status, "uninstalled")),
-	]);
+	// Single query for install totals by status
+	const statusRows = await db
+		.select({
+			status: installs.status,
+			count: count(),
+		})
+		.from(installs)
+		.groupBy(installs.status);
+
+	const statusMap = { active: 0, inactive: 0, uninstalled: 0 };
+	for (const row of statusRows) {
+		statusMap[row.status] = row.count;
+	}
 
 	if (days === null) {
-		const [[eventTotal]] = await Promise.all([
-			db.select({ value: count() }).from(events),
-		]);
+		const [{ value: totalEvents }] = await db
+			.select({ value: count() })
+			.from(events);
 
 		return {
-			activeInstalls: activeTotal.value,
-			totalUninstalls: uninstallTotal.value,
+			activeInstalls: statusMap.active,
+			totalUninstalls: statusMap.uninstalled,
 			current: null,
 			previous: null,
-			totalEvents: eventTotal.value,
+			totalEvents,
 		};
 	}
 
-	// "now" is the actual current moment, not midnight, so "Today" includes today's data
 	const now = new Date();
 	const periodStart = daysAgoDate(days);
 	const prevPeriodStart = daysAgoDate(days * 2);
@@ -129,8 +107,8 @@ export async function getOverviewStatsWithTrend(days: number | null) {
 	]);
 
 	return {
-		activeInstalls: activeTotal.value,
-		totalUninstalls: uninstallTotal.value,
+		activeInstalls: statusMap.active,
+		totalUninstalls: statusMap.uninstalled,
 		current,
 		previous,
 		totalEvents: null,
@@ -181,9 +159,8 @@ export async function getEventBreakdown(days: number | null) {
 
 	const rows = await filtered
 		.groupBy(events.eventName, products.name)
-		.orderBy(sql`sum(count(*)) over (partition by ${events.eventName}) desc`);
+		.orderBy(events.eventName);
 
-	// Reshape: group rows by eventName, with per-product counts
 	const eventMap = new Map<
 		string,
 		{ eventName: string; total: number; [product: string]: number | string }
@@ -199,10 +176,8 @@ export async function getEventBreakdown(days: number | null) {
 		entry.total = (entry.total as number) + row.count;
 	}
 
-	// Collect all product names for chart config
 	const productNames = [...new Set(rows.map((r) => r.productName))].sort();
 
-	// Sort by total desc
 	const data = [...eventMap.values()].sort(
 		(a, b) => (b.total as number) - (a.total as number),
 	);
