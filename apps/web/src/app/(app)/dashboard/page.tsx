@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { DateRangeTabs } from "@/components/dashboard/date-range-tabs";
 import { EventBreakdownChart } from "@/components/dashboard/event-breakdown-chart";
 import { EventsChart } from "@/components/dashboard/events-chart";
+import { FeedbackTable } from "@/components/dashboard/feedback-table";
 import { InstallsChart } from "@/components/dashboard/installs-chart";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
 import { ProductStatsTable } from "@/components/dashboard/product-stats-table";
@@ -11,6 +12,7 @@ import {
 	getEventBreakdown,
 	getOverviewStatsWithTrend,
 	getProductStats,
+	getRecentFeedback,
 } from "@/lib/queries/dashboard";
 
 const VALID_RANGES = ["1", "7", "30", "90", "all"] as const;
@@ -31,14 +33,21 @@ export default async function DashboardPage({
 	const { range } = await searchParams;
 	const { days, rangeKey } = parseRange(range);
 
-	const [trend, products, dailyInstalls, dailyEvents, eventBreakdown] =
-		await Promise.all([
-			getOverviewStatsWithTrend(days),
-			getProductStats(),
-			getDailyInstalls(days),
-			getDailyEvents(days),
-			getEventBreakdown(days),
-		]);
+	const [
+		trend,
+		products,
+		dailyInstalls,
+		dailyEvents,
+		eventBreakdown,
+		recentFeedback,
+	] = await Promise.all([
+		getOverviewStatsWithTrend(days),
+		getProductStats(),
+		getDailyInstalls(days),
+		getDailyEvents(days),
+		getEventBreakdown(days),
+		getRecentFeedback(days),
+	]);
 
 	const chartLabel =
 		days === null ? "all time" : days === 1 ? "today" : `${days}d`;
@@ -95,6 +104,11 @@ export default async function DashboardPage({
 			<div className="mt-8">
 				<h2 className="mb-4 text-lg font-medium">Products</h2>
 				<ProductStatsTable products={products} />
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Recent Feedback</h2>
+				<FeedbackTable rows={recentFeedback} showProduct />
 			</div>
 		</div>
 	);

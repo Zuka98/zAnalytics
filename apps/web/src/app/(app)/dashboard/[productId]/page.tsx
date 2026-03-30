@@ -6,6 +6,8 @@ import { DateRangeTabs } from "@/components/dashboard/date-range-tabs";
 import { EventBreakdownChart } from "@/components/dashboard/event-breakdown-chart";
 import { EventsChart } from "@/components/dashboard/events-chart";
 import { EventsTableControls } from "@/components/dashboard/events-table-controls";
+import { FeedbackControls } from "@/components/dashboard/feedback-controls";
+import { FeedbackTable } from "@/components/dashboard/feedback-table";
 import { InstallsChart } from "@/components/dashboard/installs-chart";
 import { RecentEventsTable } from "@/components/dashboard/recent-events-table";
 import {
@@ -21,6 +23,7 @@ import {
 	getProductEventBreakdown,
 	getProductEvents,
 	getProductEventTypes,
+	getProductFeedback,
 	getProductInstallStats,
 } from "@/lib/queries/product-detail";
 
@@ -49,6 +52,13 @@ export default async function ProductDetailPage({
 		: 25;
 	const page = Math.max(1, Number(sp.page) || 1);
 
+	const fbType = sp.fbType || null;
+	const fbStatus = sp.fbStatus || null;
+	const fbPageSize = [10, 25, 50].includes(Number(sp.fbPageSize))
+		? Number(sp.fbPageSize)
+		: 10;
+	const fbPage = Math.max(1, Number(sp.fbPage) || 1);
+
 	const [
 		product,
 		stats,
@@ -57,6 +67,7 @@ export default async function ProductDetailPage({
 		dailyInstalls,
 		dailyEvents,
 		eventBreakdown,
+		{ rows: feedbackRows, total: totalFeedback },
 	] = await Promise.all([
 		getProductById(productId),
 		getProductInstallStats(productId),
@@ -72,6 +83,13 @@ export default async function ProductDetailPage({
 		getProductDailyInstalls(productId, days),
 		getProductDailyEvents(productId, days),
 		getProductEventBreakdown(productId, days),
+		getProductFeedback({
+			productId,
+			type: fbType,
+			status: fbStatus,
+			limit: fbPageSize,
+			offset: (fbPage - 1) * fbPageSize,
+		}),
 	]);
 
 	if (!product) notFound();
@@ -148,6 +166,22 @@ export default async function ProductDetailPage({
 				</Suspense>
 				<div className="mt-3">
 					<RecentEventsTable events={eventRows} />
+				</div>
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Feedback</h2>
+				<Suspense>
+					<FeedbackControls
+						currentType={fbType}
+						currentStatus={fbStatus}
+						currentPageSize={fbPageSize}
+						currentPage={fbPage}
+						totalFeedback={totalFeedback}
+					/>
+				</Suspense>
+				<div className="mt-3">
+					<FeedbackTable rows={feedbackRows} />
 				</div>
 			</div>
 		</div>

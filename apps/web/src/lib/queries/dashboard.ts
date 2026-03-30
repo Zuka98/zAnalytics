@@ -1,4 +1,4 @@
-import { db, events, installs, products } from "@zanalytics/db";
+import { db, events, feedback, installs, products } from "@zanalytics/db";
 import { count, gte, sql } from "drizzle-orm";
 
 function daysAgoDate(days: number) {
@@ -203,4 +203,28 @@ export async function getDailyEvents(days: number | null) {
 	return filtered
 		.groupBy(sql`date_trunc('day', ${events.occurredAt})::date`)
 		.orderBy(sql`date_trunc('day', ${events.occurredAt})::date`);
+}
+
+export async function getRecentFeedback(days: number | null) {
+	const base = db
+		.select({
+			id: feedback.id,
+			type: feedback.type,
+			status: feedback.status,
+			productName: products.name,
+			reason: feedback.reason,
+			message: feedback.message,
+			email: feedback.email,
+			metadata: feedback.metadata,
+			createdAt: feedback.createdAt,
+		})
+		.from(feedback)
+		.innerJoin(products, sql`${feedback.productId} = ${products.id}`);
+
+	const filtered =
+		days === null
+			? base
+			: base.where(gte(feedback.createdAt, daysAgoDate(days)));
+
+	return filtered.orderBy(sql`${feedback.createdAt} desc`).limit(20);
 }
