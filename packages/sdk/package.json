@@ -1,5 +1,5 @@
 {
-	"name": "@zanalytics/sdk",
+	"name": "@zuka98/zanalytics-sdk",
 	"version": "0.1.0",
 	"type": "module",
 	"exports": {
