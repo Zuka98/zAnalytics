@@ -1,15 +1,11 @@
 import { db, events, feedback, installs, products } from "@zanalytics/db";
-import { count, gte, sql } from "drizzle-orm";
+import { and, count, gte, sql } from "drizzle-orm";
 
 function daysAgoDate(days: number) {
 	const d = new Date();
 	d.setHours(0, 0, 0, 0);
 	d.setDate(d.getDate() - days);
 	return d;
-}
-
-function tsLit(d: Date) {
-	return sql.raw(`'${d.toISOString()}'::timestamptz`);
 }
 
 export async function getProductStats() {
@@ -26,13 +22,13 @@ export async function getProductStats() {
 				sql<number>`count(${installs.id}) filter (where ${installs.status} = 'uninstalled')`.as(
 					"uninstall_count",
 				),
-			lastActivity: sql<Date | null>`max(${events.occurredAt})`.as(
-				"last_activity",
-			),
+			lastActivity:
+				sql<Date | null>`(select max(occurred_at) from events where product_id = ${products.id})`.as(
+					"last_activity",
+				),
 		})
 		.from(products)
 		.leftJoin(installs, sql`${installs.productId} = ${products.id}`)
-		.leftJoin(events, sql`${events.productId} = ${products.id}`)
 		.groupBy(products.id, products.name, products.platform)
 		.orderBy(products.name);
 }
@@ -41,21 +37,21 @@ export async function getProductStats() {
  * Count new installs, uninstalls, and events within [from, to) in a single query.
  */
 async function getPeriodStats(from: Date, to: Date) {
-	const fromLit = tsLit(from);
-	const toLit = tsLit(to);
+	const fromTs = from.toISOString();
+	const toTs = to.toISOString();
 
 	const [row] = await db
 		.select({
 			newInstalls:
-				sql<number>`(select count(*) from installs where ${installs.firstSeenAt} >= ${fromLit} and ${installs.firstSeenAt} < ${toLit})`.as(
+				sql<number>`(select count(*) from installs where ${installs.firstSeenAt} >= ${fromTs}::timestamptz and ${installs.firstSeenAt} < ${toTs}::timestamptz)`.as(
 					"new_installs",
 				),
 			uninstalls:
-				sql<number>`(select count(*) from installs where ${installs.status} = 'uninstalled' and ${installs.updatedAt} >= ${fromLit} and ${installs.updatedAt} < ${toLit})`.as(
+				sql<number>`(select count(*) from installs where ${installs.status} = 'uninstalled' and ${installs.updatedAt} >= ${fromTs}::timestamptz and ${installs.updatedAt} < ${toTs}::timestamptz)`.as(
 					"uninstalls",
 				),
 			totalEvents:
-				sql<number>`(select count(*) from events where ${events.occurredAt} >= ${fromLit} and ${events.occurredAt} < ${toLit})`.as(
+				sql<number>`(select count(*) from events where ${events.occurredAt} >= ${fromTs}::timestamptz and ${events.occurredAt} < ${toTs}::timestamptz)`.as(
 					"total_events",
 				),
 		})
@@ -116,30 +112,67 @@ export async function getOverviewStatsWithTrend(days: number | null) {
 }
 
 export async function getDailyInstalls(days: number | null) {
-	const base = db
+	const since = days !== null ? daysAgoDate(days) : null;
+
+	const installQuery = db
 		.select({
 			date: sql<string>`date_trunc('day', ${installs.firstSeenAt})::date`.as(
 				"date",
 			),
-			installs:
-				sql<number>`count(*) filter (where ${installs.status} != 'uninstalled')`.as(
-					"installs",
-				),
-			uninstalls:
-				sql<number>`count(*) filter (where ${installs.status} = 'uninstalled')`.as(
-					"uninstalls",
-				),
+			count: count().as("installs"),
 		})
-		.from(installs);
+		.from(installs)
+		.where(since ? gte(installs.firstSeenAt, since) : undefined)
+		.groupBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`);
 
-	const filtered =
-		days === null
-			? base
-			: base.where(gte(installs.firstSeenAt, daysAgoDate(days)));
+	const uninstallQuery = db
+		.select({
+			date: sql<string>`date_trunc('day', ${installs.updatedAt})::date`.as(
+				"date",
+			),
+			count: count().as("uninstalls"),
+		})
+		.from(installs)
+		.where(
+			since
+				? and(
+						sql`${installs.status} = 'uninstalled'`,
+						gte(installs.updatedAt, since),
+					)
+				: sql`${installs.status} = 'uninstalled'`,
+		)
+		.groupBy(sql`date_trunc('day', ${installs.updatedAt})::date`);
 
-	return filtered
-		.groupBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`)
-		.orderBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`);
+	const [installRows, uninstallRows] = await Promise.all([
+		installQuery,
+		uninstallQuery,
+	]);
+
+	const merged = new Map<
+		string,
+		{ date: string; installs: number; uninstalls: number }
+	>();
+	for (const row of installRows) {
+		merged.set(row.date, {
+			date: row.date,
+			installs: row.count,
+			uninstalls: 0,
+		});
+	}
+	for (const row of uninstallRows) {
+		const existing = merged.get(row.date);
+		if (existing) {
+			existing.uninstalls = row.count;
+		} else {
+			merged.set(row.date, {
+				date: row.date,
+				installs: 0,
+				uninstalls: row.count,
+			});
+		}
+	}
+
+	return [...merged.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getEventBreakdown(days: number | null) {
