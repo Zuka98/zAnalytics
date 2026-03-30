@@ -23,6 +23,10 @@ export const STATUS_CLASS: Record<string, string> = {
 	dismissed: "bg-muted text-muted-foreground",
 };
 
+export const EVENT_LABEL: Record<string, string> = {
+	uninstall_page_opened: "uninstall",
+};
+
 export const EVENT_CLASS: Record<string, string> = {
 	install:
 		"bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",

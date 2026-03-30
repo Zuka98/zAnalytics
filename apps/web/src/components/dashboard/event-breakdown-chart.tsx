@@ -17,6 +17,7 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/shadcn/chart";
+import { EVENT_LABEL } from "./feedback-variants";
 
 const COLORS = [
 	"oklch(0.65 0.2 250)",
@@ -61,7 +62,10 @@ export function EventBreakdownChart({
 					className="aspect-auto h-[250px] w-full"
 				>
 					<BarChart
-						data={data}
+						data={data.map((d) => ({
+							...d,
+							eventName: EVENT_LABEL[d.eventName as string] ?? d.eventName,
+						}))}
 						layout="vertical"
 						margin={{ left: 0, right: 12 }}
 					>

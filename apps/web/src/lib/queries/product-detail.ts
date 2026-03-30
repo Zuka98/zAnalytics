@@ -1,5 +1,5 @@
 import { db, events, feedback, installs, products } from "@zanalytics/db";
-import { and, count, desc, eq, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
 
 export async function getProductById(id: string) {
 	const [product] = await db
@@ -29,11 +29,20 @@ export async function getProductInstallStats(productId: string) {
 	return stats;
 }
 
+const EVENT_SORT_COLUMNS = {
+	occurredAt: events.occurredAt,
+	eventName: events.eventName,
+} as const;
+
+export type EventSortColumn = keyof typeof EVENT_SORT_COLUMNS;
+
 export async function getProductEvents(opts: {
 	productId: string;
 	eventType?: string | null;
 	installId?: string | null;
 	version?: string | null;
+	sortBy?: EventSortColumn;
+	sortDir?: "asc" | "desc";
 	limit: number;
 	offset: number;
 }) {
@@ -51,24 +60,27 @@ export async function getProductEvents(opts: {
 	}
 	const where = and(...conditions);
 
-	const [rows, [{ value: total }]] = await Promise.all([
-		db
-			.select({
-				id: events.id,
-				eventName: events.eventName,
-				installId: events.installId,
-				version: events.version,
-				occurredAt: events.occurredAt,
-			})
-			.from(events)
-			.where(where)
-			.orderBy(desc(events.occurredAt))
-			.limit(opts.limit)
-			.offset(opts.offset),
-		db.select({ value: count() }).from(events).where(where),
-	]);
+	const sortColumn = EVENT_SORT_COLUMNS[opts.sortBy ?? "occurredAt"];
+	const orderBy = opts.sortDir === "asc" ? asc(sortColumn) : desc(sortColumn);
 
-	return { rows, total };
+	const rows = await db
+		.select({
+			id: events.id,
+			eventName: events.eventName,
+			installId: events.installId,
+			version: events.version,
+			occurredAt: events.occurredAt,
+			_total: sql<number>`count(*) over()`.as("_total"),
+		})
+		.from(events)
+		.where(where)
+		.orderBy(orderBy)
+		.limit(opts.limit)
+		.offset(opts.offset);
+
+	const total = rows.length > 0 ? rows[0]._total : 0;
+
+	return { rows: rows.map(({ _total, ...rest }) => rest), total };
 }
 
 export async function getProductEventTypes(productId: string) {
@@ -226,26 +238,26 @@ export async function getProductFeedback(opts: {
 	}
 	const where = and(...conditions);
 
-	const [rows, [{ value: total }]] = await Promise.all([
-		db
-			.select({
-				id: feedback.id,
-				type: feedback.type,
-				status: feedback.status,
-				reason: feedback.reason,
-				message: feedback.message,
-				email: feedback.email,
-				metadata: feedback.metadata,
-				notes: feedback.notes,
-				createdAt: feedback.createdAt,
-			})
-			.from(feedback)
-			.where(where)
-			.orderBy(desc(feedback.createdAt))
-			.limit(opts.limit)
-			.offset(opts.offset),
-		db.select({ value: count() }).from(feedback).where(where),
-	]);
+	const rows = await db
+		.select({
+			id: feedback.id,
+			type: feedback.type,
+			status: feedback.status,
+			reason: feedback.reason,
+			message: feedback.message,
+			email: feedback.email,
+			metadata: feedback.metadata,
+			notes: feedback.notes,
+			createdAt: feedback.createdAt,
+			_total: sql<number>`count(*) over()`.as("_total"),
+		})
+		.from(feedback)
+		.where(where)
+		.orderBy(desc(feedback.createdAt))
+		.limit(opts.limit)
+		.offset(opts.offset);
 
-	return { rows, total };
+	const total = rows.length > 0 ? rows[0]._total : 0;
+
+	return { rows: rows.map(({ _total, ...rest }) => rest), total };
 }

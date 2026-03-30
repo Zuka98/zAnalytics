@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useRef } from "react";
 import { Button } from "@/components/shadcn/button";
 import { Input } from "@/components/shadcn/input";
+import { EVENT_LABEL } from "./feedback-variants";
 
 interface EventsTableControlsProps {
 	eventTypes: string[];
@@ -69,7 +70,7 @@ export function EventsTableControls({
 					<option value="">All events</option>
 					{eventTypes.map((t) => (
 						<option key={t} value={t}>
-							{t}
+							{EVENT_LABEL[t] ?? t}
 						</option>
 					))}
 				</select>

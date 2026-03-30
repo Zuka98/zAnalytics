@@ -17,6 +17,7 @@ import {
 	CardTitle,
 } from "@/components/shadcn/card";
 import {
+	type EventSortColumn,
 	getProductById,
 	getProductDailyEvents,
 	getProductDailyInstalls,
@@ -52,6 +53,14 @@ export default async function ProductDetailPage({
 		: 25;
 	const page = Math.max(1, Number(sp.page) || 1);
 
+	const VALID_SORT_COLUMNS = ["occurredAt", "eventName"] as const;
+	const sortBy = (
+		VALID_SORT_COLUMNS.includes(sp.sortBy as EventSortColumn)
+			? sp.sortBy
+			: "occurredAt"
+	) as EventSortColumn;
+	const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
+
 	const fbType = sp.fbType || null;
 	const fbStatus = sp.fbStatus || null;
 	const fbPageSize = [10, 25, 50].includes(Number(sp.fbPageSize))
@@ -76,6 +85,8 @@ export default async function ProductDetailPage({
 			eventType,
 			installId,
 			version,
+			sortBy,
+			sortDir,
 			limit: pageSize,
 			offset: (page - 1) * pageSize,
 		}),
@@ -152,7 +163,6 @@ export default async function ProductDetailPage({
 			</div>
 
 			<div className="mt-8">
-				<h2 className="mb-4 text-lg font-medium">Events</h2>
 				<Suspense>
 					<EventsTableControls
 						eventTypes={eventTypes.map((t) => t.eventName)}
@@ -165,7 +175,11 @@ export default async function ProductDetailPage({
 					/>
 				</Suspense>
 				<div className="mt-3">
-					<RecentEventsTable events={eventRows} />
+					<RecentEventsTable
+						events={eventRows}
+						sortBy={sortBy}
+						sortDir={sortDir}
+					/>
 				</div>
 			</div>
 
