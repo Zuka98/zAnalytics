@@ -52,7 +52,7 @@ scripts/                        ← Automation scripts (e.g. create-user.ts)
 - **pnpm**: Never install global packages. All deps go into workspace packages.
 - **shadcn components**: Installed to `apps/web/src/components/shadcn/` (not `ui/`). These are unmodified primitives.
 - **Custom components**: `apps/web/src/components/<feature>/` (e.g. `auth/`).
-- Do not write unnecessary comments in code to explain things. Code is self explanatory unless there is something that needs to be explicitly mentioned
+- **Comments in Code: **Do not write unnecessary comments in code to explain things. Code is self explanatory unless there is something that needs to be explicitly mentioned
 
 ## Auth
 
