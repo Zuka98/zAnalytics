@@ -108,6 +108,35 @@ export const events = pgTable(
 	],
 );
 
+// --- Feedback ---
+
+export const feedback = pgTable(
+	"feedback",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		productId: uuid("product_id")
+			.notNull()
+			.references(() => products.id),
+		installId: uuid("install_id"),
+		type: text("type").notNull(),
+		reason: text("reason"),
+		message: text("message"),
+		email: text("email"),
+		version: text("version"),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+		status: text("status").notNull().default("new"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("idx_feedback_product_id").on(t.productId),
+		index("idx_feedback_type").on(t.type),
+		index("idx_feedback_status").on(t.status),
+	],
+);
+
 // --- Inferred Types ---
 
 export type User = InferSelectModel<typeof users>;
@@ -115,3 +144,6 @@ export type NewUser = InferInsertModel<typeof users>;
 
 export type Product = InferSelectModel<typeof products>;
 export type NewProduct = InferInsertModel<typeof products>;
+
+export type Feedback = InferSelectModel<typeof feedback>;
+export type NewFeedback = InferInsertModel<typeof feedback>;
