@@ -1,8 +1,23 @@
 "use client";
 
+import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	getSortedRowModel,
+	type SortingState,
+	useReactTable,
+} from "@tanstack/react-table";
 import { FEEDBACK_STATUSES } from "@zanalytics/db/feedback-types";
-import { useState } from "react";
-import { Badge } from "@/components/shadcn/badge";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Button } from "@/components/shadcn/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/shadcn/dropdown-menu";
 import {
 	Table,
 	TableBody,
@@ -12,6 +27,9 @@ import {
 	TableRow,
 } from "@/components/shadcn/table";
 import { updateFeedbackStatus } from "@/lib/actions/feedback";
+import { cn } from "@/lib/utils";
+import { FeedbackDetailDialog } from "./feedback-detail-dialog";
+import { STATUS_CLASS, TYPE_CLASS, TYPE_LABEL } from "./feedback-variants";
 
 interface FeedbackRow {
 	id: string;
@@ -31,108 +49,205 @@ interface FeedbackTableProps {
 	showProduct?: boolean;
 }
 
-const TYPE_VARIANT: Record<
-	string,
-	"default" | "secondary" | "destructive" | "outline"
-> = {
-	uninstall: "destructive",
-	bug: "destructive",
-	feature_request: "default",
-	general: "secondary",
-};
+const PILL =
+	"inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap";
 
-const STATUS_VARIANT: Record<
-	string,
-	"default" | "secondary" | "destructive" | "outline"
-> = {
-	new: "outline",
-	reviewed: "secondary",
-	in_progress: "default",
-	resolved: "secondary",
-	dismissed: "outline",
-};
-
-function InlineStatusSelect({
+function StatusChip({
 	id,
 	currentStatus,
-	currentNotes,
 }: {
 	id: string;
 	currentStatus: string;
-	currentNotes: string | null;
 }) {
 	const [status, setStatus] = useState(currentStatus);
-	const [notes, setNotes] = useState(currentNotes ?? "");
-	const [editing, setEditing] = useState(false);
-	const [saving, setSaving] = useState(false);
+	const [, startTransition] = useTransition();
 
-	async function save() {
-		setSaving(true);
-		await updateFeedbackStatus(id, status, notes || undefined);
-		setSaving(false);
-		setEditing(false);
-	}
-
-	if (!editing) {
-		return (
-			<button
-				type="button"
-				onClick={() => setEditing(true)}
-				className="text-left"
-			>
-				<Badge variant={STATUS_VARIANT[status] ?? "outline"}>{status}</Badge>
-			</button>
-		);
+	function handleChange(newStatus: string) {
+		setStatus(newStatus);
+		startTransition(async () => {
+			await updateFeedbackStatus(id, newStatus);
+		});
 	}
 
 	return (
-		<div className="flex flex-col gap-1">
-			<select
-				value={status}
-				onChange={(e) => setStatus(e.target.value)}
-				className="h-7 rounded border bg-background px-1 text-xs"
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				onClick={(e) => e.stopPropagation()}
+				className={cn(
+					PILL,
+					STATUS_CLASS[status] ?? "bg-secondary text-secondary-foreground",
+					"gap-1 cursor-pointer",
+				)}
 			>
+				{status}
+				<ChevronDown className="size-3 opacity-60" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start">
 				{FEEDBACK_STATUSES.map((s) => (
-					<option key={s} value={s}>
-						{s}
-					</option>
+					<DropdownMenuItem
+						key={s}
+						onClick={() => handleChange(s)}
+						className="gap-2"
+					>
+						<span
+							className={cn(
+								PILL,
+								STATUS_CLASS[s] ?? "bg-secondary text-secondary-foreground",
+							)}
+						>
+							{s}
+						</span>
+					</DropdownMenuItem>
 				))}
-			</select>
-			<input
-				value={notes}
-				onChange={(e) => setNotes(e.target.value)}
-				placeholder="Notes..."
-				className="h-7 rounded border bg-background px-2 text-xs"
-			/>
-			<div className="flex gap-1">
-				<button
-					type="button"
-					onClick={save}
-					disabled={saving}
-					className="rounded bg-primary px-2 py-0.5 text-xs text-primary-foreground"
-				>
-					{saving ? "..." : "Save"}
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						setStatus(currentStatus);
-						setNotes(currentNotes ?? "");
-						setEditing(false);
-					}}
-					className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:text-foreground"
-				>
-					Cancel
-				</button>
-			</div>
-		</div>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
+}
+
+function useFeedbackColumns(showProduct: boolean): ColumnDef<FeedbackRow>[] {
+	return [
+		{
+			accessorKey: "type",
+			header: ({ column }) => (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="-ml-3 h-8"
+					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+				>
+					Type
+					<ArrowUpDown className="ml-1.5 size-3.5 opacity-50" />
+				</Button>
+			),
+			cell: ({ row }) => {
+				const type = row.original.type;
+				return (
+					<span
+						className={cn(
+							PILL,
+							TYPE_CLASS[type] ?? "bg-secondary text-secondary-foreground",
+						)}
+					>
+						{TYPE_LABEL[type] ?? type}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "status",
+			header: ({ column }) => (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="-ml-3 h-8"
+					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+				>
+					Status
+					<ArrowUpDown className="ml-1.5 size-3.5 opacity-50" />
+				</Button>
+			),
+			cell: ({ row }) => (
+				<StatusChip id={row.original.id} currentStatus={row.original.status} />
+			),
+		},
+		...(showProduct
+			? ([
+					{
+						accessorKey: "productName",
+						header: ({ column }) => (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="-ml-3 h-8"
+								onClick={() =>
+									column.toggleSorting(column.getIsSorted() === "asc")
+								}
+							>
+								Product
+								<ArrowUpDown className="ml-1.5 size-3.5 opacity-50" />
+							</Button>
+						),
+						cell: ({ row }) => (
+							<span className="text-sm">{row.original.productName ?? "—"}</span>
+						),
+					},
+				] as ColumnDef<FeedbackRow>[])
+			: []),
+		{
+			id: "summary",
+			header: "Reason / Message",
+			cell: ({ row }) => {
+				const text = row.original.reason ?? row.original.message;
+				return text ? (
+					<span className="block max-w-56 truncate text-sm">{text}</span>
+				) : (
+					<span className="text-muted-foreground">—</span>
+				);
+			},
+		},
+		{
+			accessorKey: "email",
+			header: "Email",
+			cell: ({ row }) => (
+				<span className="text-sm text-muted-foreground">
+					{row.original.email ?? "—"}
+				</span>
+			),
+		},
+		{
+			id: "rating",
+			header: "Rating",
+			cell: ({ row }) => {
+				const rating = row.original.metadata?.rating;
+				return (
+					<span className="text-sm">
+						{rating != null ? `${rating}/5` : "—"}
+					</span>
+				);
+			},
+		},
+		{
+			accessorKey: "createdAt",
+			header: ({ column }) => (
+				<Button
+					variant="ghost"
+					size="sm"
+					className="-ml-3 h-8"
+					onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+				>
+					Date
+					<ArrowUpDown className="ml-1.5 size-3.5 opacity-50" />
+				</Button>
+			),
+			cell: ({ row }) => (
+				<span className="text-sm text-muted-foreground">
+					{new Date(row.original.createdAt).toLocaleDateString()}
+				</span>
+			),
+			sortingFn: "datetime",
+		},
+	];
 }
 
 export function FeedbackTable({
 	rows,
 	showProduct = false,
 }: FeedbackTableProps) {
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: "createdAt", desc: true },
+	]);
+	const [selectedRow, setSelectedRow] = useState<FeedbackRow | null>(null);
+	const columns = useFeedbackColumns(showProduct);
+
+	const table = useReactTable({
+		data: rows,
+		columns,
+		state: { sorting },
+		onSortingChange: setSorting,
+		getCoreRowModel: getCoreRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+	});
+
 	if (rows.length === 0) {
 		return (
 			<p className="py-8 text-center text-sm text-muted-foreground">
@@ -142,51 +257,57 @@ export function FeedbackTable({
 	}
 
 	return (
-		<Table>
-			<TableHeader>
-				<TableRow>
-					<TableHead>Type</TableHead>
-					<TableHead>Status</TableHead>
-					{showProduct && <TableHead>Product</TableHead>}
-					<TableHead>Reason</TableHead>
-					<TableHead>Message</TableHead>
-					<TableHead>Email</TableHead>
-					<TableHead>Rating</TableHead>
-					<TableHead>Date</TableHead>
-				</TableRow>
-			</TableHeader>
-			<TableBody>
-				{rows.map((row) => (
-					<TableRow key={row.id}>
-						<TableCell>
-							<Badge variant={TYPE_VARIANT[row.type] ?? "outline"}>
-								{row.type}
-							</Badge>
-						</TableCell>
-						<TableCell>
-							<InlineStatusSelect
-								id={row.id}
-								currentStatus={row.status}
-								currentNotes={row.notes ?? null}
-							/>
-						</TableCell>
-						{showProduct && <TableCell>{row.productName}</TableCell>}
-						<TableCell>{row.reason ?? "—"}</TableCell>
-						<TableCell className="max-w-48 truncate">
-							{row.message ?? "—"}
-						</TableCell>
-						<TableCell className="text-muted-foreground">
-							{row.email ?? "—"}
-						</TableCell>
-						<TableCell>
-							{row.metadata?.rating != null ? `${row.metadata.rating}/5` : "—"}
-						</TableCell>
-						<TableCell className="text-muted-foreground">
-							{new Date(row.createdAt).toLocaleDateString()}
-						</TableCell>
-					</TableRow>
-				))}
-			</TableBody>
-		</Table>
+		<>
+			<div className="rounded-md border">
+				<Table>
+					<TableHeader>
+						{table.getHeaderGroups().map((hg) => (
+							<TableRow key={hg.id}>
+								{hg.headers.map((header) => (
+									<TableHead key={header.id}>
+										{header.isPlaceholder
+											? null
+											: flexRender(
+													header.column.columnDef.header,
+													header.getContext(),
+												)}
+									</TableHead>
+								))}
+							</TableRow>
+						))}
+					</TableHeader>
+					<TableBody>
+						{table.getRowModel().rows.map((row) => (
+							<TableRow
+								key={row.id}
+								tabIndex={0}
+								className="cursor-pointer"
+								onClick={() => setSelectedRow(row.original)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ")
+										setSelectedRow(row.original);
+								}}
+							>
+								{row.getVisibleCells().map((cell) => (
+									<TableCell key={cell.id}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</TableCell>
+								))}
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</div>
+
+			{selectedRow && (
+				<FeedbackDetailDialog
+					row={selectedRow}
+					open={true}
+					onOpenChange={(open) => {
+						if (!open) setSelectedRow(null);
+					}}
+				/>
+			)}
+		</>
 	);
 }
