@@ -28,14 +28,42 @@ export async function productRoutes(app: FastifyInstance) {
 	// Create a product
 	app.post<{
 		Body: { key: string; name: string; platform?: string };
-	}>("/v1/products", async (request, reply) => {
-		const { key, name, platform } = request.body;
+	}>(
+		"/v1/products",
+		{
+			schema: {
+				body: {
+					type: "object",
+					required: ["key", "name"],
+					properties: {
+						key: { type: "string", minLength: 1 },
+						name: { type: "string", minLength: 1 },
+						platform: { type: "string", minLength: 1 },
+					},
+					additionalProperties: false,
+				},
+			},
+		},
+		async (request, reply) => {
+			const { key, name, platform } = request.body;
 
-		const [product] = await db
-			.insert(products)
-			.values({ key, name, platform: platform ?? "chrome" })
-			.returning();
+			const [existing] = await db
+				.select({ id: products.id })
+				.from(products)
+				.where(eq(products.key, key));
 
-		return reply.status(201).send(product);
-	});
+			if (existing) {
+				return reply
+					.status(409)
+					.send({ error: `Product with key "${key}" already exists` });
+			}
+
+			const [product] = await db
+				.insert(products)
+				.values({ key, name, platform: platform ?? "chrome" })
+				.returning();
+
+			return reply.status(201).send(product);
+		},
+	);
 }
