@@ -8,12 +8,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/shadcn/button";
 
+interface ProductOption {
+	id: string;
+	name: string;
+}
+
 interface FeedbackControlsProps {
 	currentType: string | null;
 	currentStatus: string | null;
 	currentPageSize: number;
 	currentPage: number;
 	totalFeedback: number;
+	products?: ProductOption[];
+	currentProductId?: string | null;
 }
 
 const PAGE_SIZES = [10, 25, 50];
@@ -24,6 +31,8 @@ export function FeedbackControls({
 	currentPageSize,
 	currentPage,
 	totalFeedback,
+	products,
+	currentProductId,
 }: FeedbackControlsProps) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -45,7 +54,26 @@ export function FeedbackControls({
 
 	return (
 		<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-			<div className="flex items-center gap-2">
+			<div className="flex flex-wrap items-center gap-2">
+				{products && (
+					<select
+						value={currentProductId ?? ""}
+						onChange={(e) =>
+							updateParams({
+								fbProduct: e.target.value || null,
+								fbPage: null,
+							})
+						}
+						className="h-8 rounded-md border bg-background px-2 text-sm"
+					>
+						<option value="">All products</option>
+						{products.map((p) => (
+							<option key={p.id} value={p.id}>
+								{p.name}
+							</option>
+						))}
+					</select>
+				)}
 				<select
 					value={currentType ?? ""}
 					onChange={(e) =>
