@@ -1,6 +1,12 @@
 "use client";
 
-import { LayoutDashboard, LogOut, Package, Settings } from "lucide-react";
+import {
+	LayoutDashboard,
+	LogOut,
+	MessageSquare,
+	Package,
+	Settings,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -9,6 +15,7 @@ import { ThemeToggle } from "./theme-toggle";
 
 const navItems = [
 	{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+	{ href: "/feedback", label: "Feedback", icon: MessageSquare },
 	{ href: "/products", label: "Products", icon: Package },
 	{ href: "/settings", label: "Settings", icon: Settings },
 ];

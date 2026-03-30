@@ -1,4 +1,4 @@
-import { db, events, installs, products } from "@zanalytics/db";
+import { db, events, feedback, installs, products } from "@zanalytics/db";
 import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 
 export async function getProductById(id: string) {
@@ -172,4 +172,44 @@ export async function getProductDailyEvents(
 	return filtered
 		.groupBy(sql`date_trunc('day', ${events.occurredAt})::date`)
 		.orderBy(sql`date_trunc('day', ${events.occurredAt})::date`);
+}
+
+export async function getProductFeedback(opts: {
+	productId: string;
+	type?: string | null;
+	status?: string | null;
+	limit: number;
+	offset: number;
+}) {
+	const conditions = [eq(feedback.productId, opts.productId)];
+	if (opts.type) {
+		conditions.push(eq(feedback.type, opts.type));
+	}
+	if (opts.status) {
+		conditions.push(eq(feedback.status, opts.status));
+	}
+	const where = and(...conditions);
+
+	const [rows, [{ value: total }]] = await Promise.all([
+		db
+			.select({
+				id: feedback.id,
+				type: feedback.type,
+				status: feedback.status,
+				reason: feedback.reason,
+				message: feedback.message,
+				email: feedback.email,
+				metadata: feedback.metadata,
+				notes: feedback.notes,
+				createdAt: feedback.createdAt,
+			})
+			.from(feedback)
+			.where(where)
+			.orderBy(desc(feedback.createdAt))
+			.limit(opts.limit)
+			.offset(opts.offset),
+		db.select({ value: count() }).from(feedback).where(where),
+	]);
+
+	return { rows, total };
 }
