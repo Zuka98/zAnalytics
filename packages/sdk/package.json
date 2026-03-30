@@ -1,6 +1,6 @@
 {
 	"name": "@zuka98/zanalytics-sdk",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"type": "module",
 	"exports": {
 		".": {
@@ -13,7 +13,8 @@
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"CLAUDE.md"
 	],
 	"scripts": {
 		"build": "tsup",
