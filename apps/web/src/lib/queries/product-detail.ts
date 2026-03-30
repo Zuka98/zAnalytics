@@ -91,35 +91,71 @@ export async function getProductDailyInstalls(
 	productId: string,
 	days: number | null,
 ) {
-	const base = db
-		.select({
-			date: sql<string>`date_trunc('day', ${installs.firstSeenAt})::date`.as(
-				"date",
-			),
-			installs:
-				sql<number>`count(*) filter (where ${installs.status} != 'uninstalled')`.as(
-					"installs",
-				),
-			uninstalls:
-				sql<number>`count(*) filter (where ${installs.status} = 'uninstalled')`.as(
-					"uninstalls",
-				),
-		})
-		.from(installs);
+	const since = days !== null ? daysAgoDate(days) : null;
 
-	const filtered =
-		days === null
-			? base.where(eq(installs.productId, productId))
-			: base.where(
-					and(
-						eq(installs.productId, productId),
-						gte(installs.firstSeenAt, daysAgoDate(days)),
-					),
-				);
+	const installConditions = since
+		? and(eq(installs.productId, productId), gte(installs.firstSeenAt, since))
+		: eq(installs.productId, productId);
 
-	return filtered
-		.groupBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`)
-		.orderBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`);
+	const uninstallConditions = since
+		? and(
+				eq(installs.productId, productId),
+				sql`${installs.status} = 'uninstalled'`,
+				gte(installs.updatedAt, since),
+			)
+		: and(
+				eq(installs.productId, productId),
+				sql`${installs.status} = 'uninstalled'`,
+			);
+
+	const [installRows, uninstallRows] = await Promise.all([
+		db
+			.select({
+				date: sql<string>`date_trunc('day', ${installs.firstSeenAt})::date`.as(
+					"date",
+				),
+				count: count().as("installs"),
+			})
+			.from(installs)
+			.where(installConditions)
+			.groupBy(sql`date_trunc('day', ${installs.firstSeenAt})::date`),
+		db
+			.select({
+				date: sql<string>`date_trunc('day', ${installs.updatedAt})::date`.as(
+					"date",
+				),
+				count: count().as("uninstalls"),
+			})
+			.from(installs)
+			.where(uninstallConditions)
+			.groupBy(sql`date_trunc('day', ${installs.updatedAt})::date`),
+	]);
+
+	const merged = new Map<
+		string,
+		{ date: string; installs: number; uninstalls: number }
+	>();
+	for (const row of installRows) {
+		merged.set(row.date, {
+			date: row.date,
+			installs: row.count,
+			uninstalls: 0,
+		});
+	}
+	for (const row of uninstallRows) {
+		const existing = merged.get(row.date);
+		if (existing) {
+			existing.uninstalls = row.count;
+		} else {
+			merged.set(row.date, {
+				date: row.date,
+				installs: 0,
+				uninstalls: row.count,
+			});
+		}
+	}
+
+	return [...merged.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function getProductEventBreakdown(
