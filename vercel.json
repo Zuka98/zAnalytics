@@ -4,5 +4,6 @@
 	"devCommand": "cd apps/web && pnpm dev",
 	"installCommand": "pnpm install",
 	"framework": "nextjs",
-	"outputDirectory": "apps/web/.next"
+	"outputDirectory": "apps/web/.next",
+	"regions": ["lhr1"]
 }
