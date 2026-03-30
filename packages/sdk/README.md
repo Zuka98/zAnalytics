@@ -1,60 +1,30 @@
-# @zanalytics/sdk
+# @zuka98/zanalytics-sdk
 
-Client-side analytics SDK for zAnalytics. ESM-only, works in Chrome extensions and web apps.
+Client-side analytics SDK for [zAnalytics](https://github.com/Zuka98/zAnalytics). Tracks installs, events, and feedback from Chrome extensions. ESM-only.
 
 ## Installation
 
 ```bash
-pnpm add @zanalytics/sdk
+pnpm add @zuka98/zanalytics-sdk
 ```
 
-> Requires `react ^19` if you use the feedback UI components.
+Add to your extension's `.npmrc` to pull from GitHub Packages:
+
+```
+@zuka98:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+```
 
 ## Quick start
 
-### 1. Initialize in your background service worker
-
-Call `init()` once, as early as possible. On first run it generates and persists an `installId` and automatically fires an `install` event.
-
-```ts
-// src/background.ts
-import { init } from '@zanalytics/sdk'
-
-chrome.runtime.onInstalled.addListener(async () => {
-  await init({
-    productKey: import.meta.env.VITE_ZA_PRODUCT_KEY,
-    version: import.meta.env.VITE_ZA_VERSION,
-    apiUrl: import.meta.env.VITE_ZA_API_URL,
-  })
-})
-```
-
-### 2. Track events
-
-```ts
-import { track, trackOpen, trackUpdate } from '@zanalytics/sdk'
-
-// When the extension side panel opens
-await trackOpen()
-
-// Track a custom event with properties
-await track('color_picked', { format: 'hex', value: '#ff0000' })
-
-// When the extension updates
-await trackUpdate('0.2.1') // previous version
-```
-
-### 3. Environment variables (Vite)
-
-Add to your extension's `.env`:
+### 1. Environment variables
 
 ```
-VITE_ZA_PRODUCT_KEY=your-product-key
-VITE_ZA_VERSION=0.1.0
-VITE_ZA_API_URL=https://your-api-url.com
+VITE_ZANALYTICS_PRODUCT_KEY=your-product-key
+VITE_ZANALYTICS_API_URL=https://your-api-url.com
 ```
 
-Read the version directly from your manifest to avoid duplication:
+To keep version in sync with your manifest automatically:
 
 ```ts
 // vite.config.ts
@@ -66,44 +36,129 @@ export default defineConfig({
 })
 ```
 
-## Feedback UI components
+### 2. Initialize in your background service worker
 
-Drop-in React components — no external dependencies beyond React.
+Call `init()` once on startup. On first run it generates a UUID `installId`, persists it to `chrome.storage.local`, and automatically fires an `install` event.
 
-### General feedback form
+```ts
+// src/background.ts
+import { init } from '@zuka98/zanalytics-sdk'
 
-```tsx
-import { FeedbackForm } from '@zanalytics/sdk/react'
-
-function MyFeedbackPage() {
-  return (
-    <FeedbackForm
-      defaultType="general"
-      onSuccess={() => console.log('sent!')}
-      onError={(err) => console.error(err)}
-    />
-  )
-}
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  await init({
+    productKey: import.meta.env.VITE_ZANALYTICS_PRODUCT_KEY,
+    version: import.meta.env.VITE_ZA_VERSION,
+    apiUrl: import.meta.env.VITE_ZANALYTICS_API_URL,
+  })
+})
 ```
 
-### Uninstall survey
+> `init()` must be awaited before calling `track()` or `submitFeedback()`.
 
-Render this on your extension's uninstall page (`chrome_url_overrides` or the URL set in `chrome.runtime.setUninstallURL`).
+### 3. Track events
 
-```tsx
-import { UninstallSurvey } from '@zanalytics/sdk/react'
+```ts
+import { track, trackOpen, trackUpdate } from '@zuka98/zanalytics-sdk'
 
-function UninstallPage() {
-  return <UninstallSurvey onSuccess={() => window.close()} />
-}
+await trackOpen()                                  // send "open" event
+await trackUpdate('0.2.0')                         // send "update" with previous version
+await track('color_picked', { format: 'hex' })     // custom event with properties
 ```
 
-### Theming
+### 4. Collect feedback
 
-Both components use CSS custom properties so you can match your extension's look:
+```ts
+import { submitFeedback } from '@zuka98/zanalytics-sdk'
+
+await submitFeedback({
+  type: 'bug',
+  message: 'Sidebar crashes on dark mode',
+  email: 'user@example.com', // optional
+})
+```
+
+Or use the drop-in React components:
+
+```tsx
+import { FeedbackForm, UninstallSurvey } from '@zuka98/zanalytics-sdk/react'
+
+// General / bug / feature_request form
+<FeedbackForm defaultType="general" onSuccess={() => {}} />
+
+// Uninstall survey — render on your uninstall page
+<UninstallSurvey onSuccess={() => window.close()} />
+```
+
+---
+
+## API reference
+
+### Core (`@zuka98/zanalytics-sdk`)
+
+| Export | Description |
+|---|---|
+| `init(opts)` | Initialize SDK. Generates `installId` on first run and fires `install` event automatically |
+| `track(eventName, properties?)` | Send a custom event. Fire-and-forget, never throws |
+| `trackOpen()` | Send `open` event |
+| `trackUpdate(previousVersion)` | Send `update` event |
+| `trackInstall()` | Send `install` event (called automatically by `init()` on first run) |
+| `getInstallId()` | Returns current `installId`. Throws if called before `init()` |
+| `submitFeedback(opts)` | Submit feedback. Returns `{ ok, feedbackId?, error? }`, never throws |
+| `chromeStorageAdapter` | Default storage adapter using `chrome.storage.local` |
+
+### React (`@zuka98/zanalytics-sdk/react`)
+
+| Export | Description |
+|---|---|
+| `FeedbackForm` | Form for general / bug / feature_request feedback |
+| `UninstallSurvey` | Uninstall reason survey with radio buttons |
+
+### `init()` options
+
+```ts
+init({
+  productKey: string       // your product key registered in zAnalytics
+  version: string          // current extension version
+  apiUrl: string           // base URL of the zAnalytics API
+  storage?: StorageAdapter // optional — defaults to chrome.storage.local
+})
+```
+
+---
+
+## Event names
+
+Reserved names trigger special server-side logic:
+
+| Event | Effect |
+|---|---|
+| `install` | Creates install record, sets status `active` |
+| `open` | Updates `lastSeenAt`, sets status `active` |
+| `heartbeat` | Updates `lastSeenAt`, sets status `active` |
+| `update` | Updates `lastSeenAt` and `currentVersion` |
+| `uninstall_page_opened` | Sets install status to `uninstalled` |
+
+Any other event name is stored as-is with no side effects.
+
+---
+
+## Feedback types
+
+Valid values for `type` in `submitFeedback()` and `FeedbackForm`:
+
+- `uninstall`
+- `general`
+- `bug`
+- `feature_request`
+
+---
+
+## Theming the React components
+
+Both components use CSS custom properties — override on any wrapper element:
 
 ```css
-.my-wrapper {
+.wrapper {
   --za-primary: #7c3aed;
   --za-primary-text: #fff;
   --za-bg: #1e1e2e;
@@ -111,27 +166,24 @@ Both components use CSS custom properties so you can match your extension's look
   --za-border: #45475a;
   --za-radius: 8px;
   --za-gap: 16px;
+  --za-font: inherit;
 }
 ```
 
-## API reference
+---
 
-### Core
+## Custom storage adapter
 
-| Export | Description |
-|---|---|
-| `init(opts)` | Initialize SDK, resolve/generate `installId`, fire `install` on first run |
-| `track(eventName, properties?)` | Send a custom event |
-| `trackInstall()` | Send `install` event |
-| `trackOpen()` | Send `open` event |
-| `trackUpdate(previousVersion)` | Send `update` event |
-| `getInstallId()` | Returns current `installId` (throws if not initialized) |
-| `submitFeedback(opts)` | Submit feedback directly without UI |
-| `chromeStorageAdapter` | Default storage adapter using `chrome.storage.local` |
+The default storage is `chrome.storage.local`. Pass a custom adapter if needed:
 
-### React (`@zanalytics/sdk/react`)
-
-| Export | Description |
-|---|---|
-| `FeedbackForm` | General / bug / feature-request form |
-| `UninstallSurvey` | Uninstall reason survey |
+```ts
+await init({
+  productKey: '...',
+  version: '...',
+  apiUrl: '...',
+  storage: {
+    get: async (key) => localStorage.getItem(key),
+    set: async (key, value) => localStorage.setItem(key, value),
+  },
+})
+```
