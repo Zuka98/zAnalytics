@@ -21,7 +21,8 @@
 		"db:generate": "dotenv -- pnpm --filter @zanalytics/db db:generate",
 		"db:migrate": "pnpm --filter @zanalytics/db db:migrate",
 		"db:studio": "dotenv -- pnpm --filter @zanalytics/db db:studio",
-		"create:user": "dotenv -- tsx scripts/create-user.ts"
+		"create:user": "dotenv -- tsx scripts/create-user.ts",
+		"db:seed": "dotenv -- tsx scripts/seed-mock-data.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.0",
