@@ -11,7 +11,9 @@ const globalForDb = globalThis as unknown as {
 };
 
 if (!globalForDb._pgConnection) {
-	globalForDb._pgConnection = postgres(process.env.DATABASE_URL ?? "");
+	globalForDb._pgConnection = postgres(process.env.DATABASE_URL ?? "", {
+		max: Number(process.env.DB_POOL_SIZE) || 5,
+	});
 }
 
 if (!globalForDb._db) {
