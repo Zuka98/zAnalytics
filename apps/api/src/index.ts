@@ -22,6 +22,19 @@ await app.register(rateLimit, {
 	global: false,
 });
 
+app.get("/health", async () => {
+	const mem = process.memoryUsage();
+	return {
+		status: "ok",
+		uptime: process.uptime(),
+		memory: {
+			rss: Math.round(mem.rss / 1024 / 1024),
+			heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+			heapTotal: Math.round(mem.heapTotal / 1024 / 1024),
+		},
+	};
+});
+
 app.register(productRoutes);
 app.register(eventRoutes);
 app.register(feedbackRoutes);
