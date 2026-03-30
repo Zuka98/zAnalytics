@@ -30,7 +30,15 @@ const ACTIVITY_EVENTS = new Set(["open", "heartbeat", "update"]);
 export async function eventRoutes(app: FastifyInstance) {
 	app.post<{ Body: EventBody }>(
 		"/v1/events",
-		{ schema: { body: eventBodySchema } },
+		{
+			schema: { body: eventBodySchema },
+			config: {
+				rateLimit: {
+					max: 60,
+					timeWindow: "1 minute",
+				},
+			},
+		},
 		async (request, reply) => {
 			const {
 				product: productKey,

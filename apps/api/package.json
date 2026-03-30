@@ -10,6 +10,7 @@
 		"type-check": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@fastify/rate-limit": "^10.3.0",
 		"@zanalytics/db": "workspace:*",
 		"dotenv": "^17.3.1",
 		"drizzle-orm": "^0.44.7",

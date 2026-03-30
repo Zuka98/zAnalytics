@@ -33,7 +33,15 @@ interface FeedbackBody {
 export async function feedbackRoutes(app: FastifyInstance) {
 	app.post<{ Body: FeedbackBody }>(
 		"/v1/feedback",
-		{ schema: { body: feedbackBodySchema } },
+		{
+			schema: { body: feedbackBodySchema },
+			config: {
+				rateLimit: {
+					max: 10,
+					timeWindow: "1 minute",
+				},
+			},
+		},
 		async (request, reply) => {
 			const {
 				product: productKey,
