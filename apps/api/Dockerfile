@@ -12,7 +12,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY packages/db/package.json packages/db/
 
-# Install deps (need tsx + devDeps for running TS at runtime)
+# Install deps
 RUN pnpm install --frozen-lockfile \
     --filter @zanalytics/api... \
     --filter @zanalytics/db
@@ -22,8 +22,11 @@ COPY apps/api/ apps/api/
 COPY packages/db/src/ packages/db/src/
 COPY packages/db/tsconfig.json packages/db/
 
+# Bundle API (includes @zanalytics/db via noExternal)
+RUN pnpm --filter @zanalytics/api build
+
 WORKDIR /app/apps/api
 
 EXPOSE 8080
 
-CMD ["pnpm", "exec", "tsx", "src/index.ts"]
+CMD ["node", "dist/index.js"]

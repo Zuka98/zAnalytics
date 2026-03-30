@@ -23,7 +23,8 @@
 		"db:studio": "dotenv -- pnpm --filter @zanalytics/db db:studio",
 		"create:user": "dotenv -- tsx scripts/create-user.ts",
 		"db:seed": "dotenv -- tsx scripts/seed-mock-data.ts",
-		"publish:sdk": "dotenv -- pnpm --filter @zuka98/zanalytics-sdk publish --no-git-checks"
+		"publish:sdk": "dotenv -- pnpm --filter @zuka98/zanalytics-sdk publish --no-git-checks",
+		"deploy:api": "fly deploy --app zanalytics-api"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.0",
