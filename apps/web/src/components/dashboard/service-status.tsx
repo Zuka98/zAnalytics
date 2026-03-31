@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Activity, Circle, HardDrive } from "lucide-react";
-import { formatTime } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/shadcn/badge";
 import {
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle,
 } from "@/components/shadcn/card";
-import { Badge } from "@/components/shadcn/badge";
+import { formatTime } from "@/lib/utils";
 
 interface HealthResponse {
 	status: string;

@@ -3,7 +3,6 @@
 import { FEEDBACK_STATUSES } from "@zanalytics/db/feedback-types";
 import { ChevronDown } from "lucide-react";
 import { useState, useTransition } from "react";
-import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/shadcn/button";
 import {
 	Dialog,
@@ -21,7 +20,7 @@ import {
 	updateFeedbackNotes,
 	updateFeedbackStatus,
 } from "@/lib/actions/feedback";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { STATUS_CLASS, TYPE_CLASS, TYPE_LABEL } from "./feedback-variants";
 
 const PILL =
