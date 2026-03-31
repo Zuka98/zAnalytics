@@ -9,6 +9,16 @@ export const FEEDBACK_TYPES = [
 
 export type FeedbackType = (typeof FEEDBACK_TYPES)[number];
 
+export const UNINSTALL_REASONS = [
+	{ value: "too_slow", label: "It was too slow" },
+	{ value: "missing_features", label: "Missing features I need" },
+	{ value: "found_alternative", label: "Found a better alternative" },
+	{ value: "no_longer_needed", label: "No longer need it" },
+	{ value: "other", label: "Other" },
+] as const;
+
+export type UninstallReason = (typeof UNINSTALL_REASONS)[number]["value"];
+
 export interface SubmitFeedbackOptions {
 	type: FeedbackType;
 	reason?: string;
