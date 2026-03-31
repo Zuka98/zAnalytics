@@ -5,26 +5,26 @@ Replace the 4 separate table implementations with a single configurable `<DataTa
 ## 1. DataTable Core
 
 - [x] 1.0 Checkout new branch for this feature
-- [ ] **1.1** Create `apps/web/src/components/data-table/data-table.tsx` — generic `DataTable<T>` client component accepting: `columns: ColumnDef<T>[]`, `data: T[]`, `getRowId: (row: T) => string`, `emptyMessage?: string`
-- [ ] **1.2** Implement base table rendering using shadcn `Table` primitives and tanstack `flexRender`, matching the existing rounded-border card style
-- [ ] **1.3** Add empty state rendering — when `data` is empty, show `emptyMessage` (default: "No data.") centered in a `py-8` paragraph
-- [ ] 1.4 Create a temporary table on testing page (route) where we can refine these tables with different parameters please to see how it all looks like
+- [x] **1.1** Create `apps/web/src/components/data-table/data-table.tsx` — generic `DataTable<T>` client component accepting: `columns: ColumnDef<T>[]`, `data: T[]`, `getRowId: (row: T) => string`, `emptyMessage?: string`
+- [x] **1.2** Implement base table rendering using shadcn `Table` primitives and tanstack `flexRender`, matching the existing rounded-border card style
+- [x] **1.3** Add empty state rendering — when `data` is empty, show `emptyMessage` (default: "No data.") centered in a `py-8` paragraph
+- [x] 1.4 Create a temporary table on testing page (route) where we can refine these tables with different parameters please to see how it all looks like
 
 ## 2. Sorting
 
-- [ ] **2.1** Add client-side sorting support: accept optional `defaultSort?: SortingState`, wire `getSortedRowModel()` from tanstack when no `sortMode` prop or `sortMode="client"`
-- [ ] **2.2** Add URL-based sorting support: accept `sortMode="url"` with `sortBy?: string` and `sortDir?: "asc" | "desc"` props, push sort changes to URL params via `useRouter`/`useSearchParams`
-- [ ] **2.3** Create a shared `SortableHeader` sub-component inside the file — renders the ghost button with `ArrowUp`/`ArrowDown`/`ArrowUpDown` icon, works for both sort modes
-- [ ] **2.4** Columns opt in to sorting via tanstack's existing `enableSorting` on ColumnDef (default true for accessor columns). Non-sortable columns just render plain header text.
-- [ ] Let me verify these by testing the tables on testing page
+- [x] **2.1** Add client-side sorting support: accept optional `defaultSort?: SortingState`, wire `getSortedRowModel()` from tanstack when no `sortMode` prop or `sortMode="client"`
+- [x] **2.2** Add URL-based sorting support: accept `sortMode="url"` with `sortBy?: string` and `sortDir?: "asc" | "desc"` props, push sort changes to URL params via `useRouter`/`useSearchParams`
+- [x] **2.3** Create a shared `SortableHeader` sub-component inside the file — renders the ghost button with `ArrowUp`/`ArrowDown`/`ArrowUpDown` icon, works for both sort modes
+- [x] **2.4** Columns opt in to sorting via tanstack's existing `enableSorting` on ColumnDef (default true for accessor columns). Non-sortable columns just render plain header text.
+- [x] Let me verify these by testing the tables on testing page
 
 ## 3. Toolbar — Search & Filters
 
-- [ ] **3.1** Add optional `search?: { placeholder: string; paramKey: string }` prop — when provided, render a debounced (300ms) search `Input` with `Search` icon in a toolbar row above the table, pushing value to the URL param specified by `paramKey`
-- [ ] **3.2** Add optional `filters?: Array<{ paramKey: string; label: string; options: { value: string; label: string }[] }>` prop — render a `<select>` dropdown for each filter entry, push selections to URL params, reset page on change
-- [ ] **3.3** Add optional `extraSearch?: Array<{ placeholder: string; paramKey: string }>` prop for additional debounced search inputs (e.g. Events table has Install ID + Version search fields)
-- [ ] **3.4** Render toolbar only when at least one of `search`, `filters`, or `extraSearch` is provided. Use the existing flex layout pattern: `flex flex-col gap-2 sm:flex-row sm:items-center`
-- [ ] `3.5 Let me verify these again`
+- [x] **3.1** Add optional `search?: { placeholder: string; paramKey: string }` prop — when provided, render a debounced (300ms) search `Input` with `Search` icon in a toolbar row above the table, pushing value to the URL param specified by `paramKey`
+- [x] **3.2** Add optional `filters?: Array<{ paramKey: string; label: string; options: { value: string; label: string }[] }>` prop — render a `<select>` dropdown for each filter entry, push selections to URL params, reset page on change
+- [x] **3.3** Add optional `extraSearch?: Array<{ placeholder: string; paramKey: string }>` prop for additional debounced search inputs (e.g. Events table has Install ID + Version search fields)
+- [x] **3.4** Render toolbar only when at least one of `search`, `filters`, or `extraSearch` is provided. Use the existing flex layout pattern: `flex flex-col gap-2 sm:flex-row sm:items-center`
+- [x] `3.5 Let me verify these again`
 
 ## 4. Toolbar — Pagination
 
