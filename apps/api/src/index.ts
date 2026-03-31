@@ -29,7 +29,6 @@ app.get("/health", async () => {
 	const mem = process.memoryUsage();
 	return {
 		status: "ok",
-		uptime: process.uptime(),
 		memory: {
 			rss: Math.round(mem.rss / 1024 / 1024),
 			heapUsed: Math.round(mem.heapUsed / 1024 / 1024),

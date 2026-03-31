@@ -6,6 +6,7 @@ import { FeedbackTable } from "@/components/dashboard/feedback-table";
 import { InstallsChart } from "@/components/dashboard/installs-chart";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
 import { ProductStatsTable } from "@/components/dashboard/product-stats-table";
+import { ServiceStatus } from "@/components/dashboard/service-status";
 import {
 	getDailyEvents,
 	getDailyInstalls,
@@ -84,6 +85,10 @@ export default async function DashboardPage({
 				<Suspense>
 					<DateRangeTabs current={rangeKey} />
 				</Suspense>
+			</div>
+
+			<div className="mb-6">
+				<ServiceStatus />
 			</div>
 
 			<OverviewStats stats={stats} />

@@ -3,6 +3,7 @@
 import { FEEDBACK_STATUSES } from "@zanalytics/db/feedback-types";
 import { ChevronDown } from "lucide-react";
 import { useState, useTransition } from "react";
+import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/shadcn/button";
 import {
 	Dialog,
@@ -163,7 +164,7 @@ export function FeedbackDetailDialog({
 
 					<div className="flex gap-3">
 						<span className="w-20 shrink-0 text-muted-foreground">Date</span>
-						<span>{new Date(row.createdAt).toLocaleString()}</span>
+						<span>{formatDateTime(new Date(row.createdAt))}</span>
 					</div>
 
 					<div className="flex flex-col gap-1.5 border-t pt-4">

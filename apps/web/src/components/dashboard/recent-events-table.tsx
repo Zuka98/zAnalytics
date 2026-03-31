@@ -10,6 +10,7 @@ import {
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
+import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/shadcn/button";
 import {
 	Table,
@@ -167,11 +168,9 @@ export function RecentEventsTable({
 			header: () => <SortHeader columnId="occurredAt" label="Timestamp" />,
 			cell: ({ row }) => {
 				const d = new Date(row.original.occurredAt);
-				const time = d.toLocaleTimeString("en-GB", { hour12: false });
-				const date = d.toLocaleDateString("en-GB");
 				return (
 					<span className="text-sm text-muted-foreground">
-						{time} {date}
+						{formatDateTime(d)}
 					</span>
 				);
 			},
