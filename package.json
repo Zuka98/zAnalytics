@@ -22,6 +22,7 @@
 		"db:migrate": "pnpm --filter @zanalytics/db db:migrate",
 		"db:studio": "dotenv -- pnpm --filter @zanalytics/db db:studio",
 		"create:user": "dotenv -- tsx scripts/create-user.ts",
+		"create:user:production": "dotenv -e .env.production -- tsx scripts/create-user.ts",
 		"db:seed": "dotenv -- tsx scripts/seed-mock-data.ts",
 		"publish:sdk": "dotenv -- pnpm --filter @zuka98/zanalytics-sdk publish --no-git-checks",
 		"deploy:api": "fly deploy --app zanalytics-api"

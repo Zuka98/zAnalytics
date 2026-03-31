@@ -77,16 +77,19 @@ await submitFeedback({
 })
 ```
 
-Or use the drop-in React components:
+For uninstall surveys, use the built-in reason constants:
 
-```tsx
-import { FeedbackForm, UninstallSurvey } from '@zuka98/zanalytics-sdk/react'
+```ts
+import { UNINSTALL_REASONS, submitFeedback } from '@zuka98/zanalytics-sdk'
 
-// General / bug / feature_request form
-<FeedbackForm defaultType="general" onSuccess={() => {}} />
+// UNINSTALL_REASONS provides standard reasons with labels:
+// [{ value: "too_slow", label: "It was too slow" }, ...]
 
-// Uninstall survey — render on your uninstall page
-<UninstallSurvey onSuccess={() => window.close()} />
+await submitFeedback({
+  type: 'uninstall',
+  reason: 'missing_features',
+  message: 'Needed X feature',
+})
 ```
 
 ---
@@ -104,14 +107,9 @@ import { FeedbackForm, UninstallSurvey } from '@zuka98/zanalytics-sdk/react'
 | `trackInstall()` | Send `install` event (called automatically by `init()` on first run) |
 | `getInstallId()` | Returns current `installId`. Throws if called before `init()` |
 | `submitFeedback(opts)` | Submit feedback. Returns `{ ok, feedbackId?, error? }`, never throws |
+| `FEEDBACK_TYPES` | Valid feedback type values |
+| `UNINSTALL_REASONS` | Standard uninstall reasons with labels |
 | `chromeStorageAdapter` | Default storage adapter using `chrome.storage.local` |
-
-### React (`@zuka98/zanalytics-sdk/react`)
-
-| Export | Description |
-|---|---|
-| `FeedbackForm` | Form for general / bug / feature_request feedback |
-| `UninstallSurvey` | Uninstall reason survey with radio buttons |
 
 ### `init()` options
 
@@ -144,31 +142,12 @@ Any other event name is stored as-is with no side effects.
 
 ## Feedback types
 
-Valid values for `type` in `submitFeedback()` and `FeedbackForm`:
+Valid values for `type` in `submitFeedback()`:
 
 - `uninstall`
 - `general`
 - `bug`
 - `feature_request`
-
----
-
-## Theming the React components
-
-Both components use CSS custom properties — override on any wrapper element:
-
-```css
-.wrapper {
-  --za-primary: #7c3aed;
-  --za-primary-text: #fff;
-  --za-bg: #1e1e2e;
-  --za-text: #cdd6f4;
-  --za-border: #45475a;
-  --za-radius: 8px;
-  --za-gap: 16px;
-  --za-font: inherit;
-}
-```
 
 ---
 

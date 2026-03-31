@@ -8,6 +8,7 @@ const envPath = resolve(__dirname, "../.env");
 if (existsSync(envPath)) config({ path: envPath });
 
 const { default: Fastify } = await import("fastify");
+const { default: cors } = await import("@fastify/cors");
 const { default: rateLimit } = await import("@fastify/rate-limit");
 const { eventRoutes } = await import("./routes/events.js");
 const { feedbackRoutes } = await import("./routes/feedback.js");
@@ -18,6 +19,8 @@ const app = Fastify({
 	trustProxy: true,
 });
 
+await app.register(cors, { origin: "*" });
+
 await app.register(rateLimit, {
 	global: false,
 });
@@ -26,7 +29,6 @@ app.get("/health", async () => {
 	const mem = process.memoryUsage();
 	return {
 		status: "ok",
-		uptime: process.uptime(),
 		memory: {
 			rss: Math.round(mem.rss / 1024 / 1024),
 			heapUsed: Math.round(mem.heapUsed / 1024 / 1024),

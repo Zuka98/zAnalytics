@@ -20,7 +20,7 @@ import {
 	TableRow,
 } from "@/components/shadcn/table";
 import { deleteEvents } from "@/lib/actions/events";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { EVENT_CLASS, EVENT_LABEL } from "./feedback-variants";
 
 interface EventRow {
@@ -167,11 +167,9 @@ export function RecentEventsTable({
 			header: () => <SortHeader columnId="occurredAt" label="Timestamp" />,
 			cell: ({ row }) => {
 				const d = new Date(row.original.occurredAt);
-				const time = d.toLocaleTimeString("en-GB", { hour12: false });
-				const date = d.toLocaleDateString("en-GB");
 				return (
 					<span className="text-sm text-muted-foreground">
-						{time} {date}
+						{formatDateTime(d)}
 					</span>
 				);
 			},
@@ -245,52 +243,49 @@ export function RecentEventsTable({
 					</Button>
 				</div>
 			</div>
-				<Table>
-					<TableHeader>
-						{table.getHeaderGroups().map((hg) => (
-							<TableRow key={hg.id}>
-								{hg.headers.map((header) => (
-									<TableHead key={header.id}>
-										{header.isPlaceholder
-											? null
-											: flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
-									</TableHead>
+			<Table>
+				<TableHeader>
+					{table.getHeaderGroups().map((hg) => (
+						<TableRow key={hg.id}>
+							{hg.headers.map((header) => (
+								<TableHead key={header.id}>
+									{header.isPlaceholder
+										? null
+										: flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)}
+								</TableHead>
+							))}
+						</TableRow>
+					))}
+				</TableHeader>
+				<TableBody>
+					{table.getRowModel().rows.length === 0 ? (
+						<TableRow>
+							<TableCell
+								colSpan={columns.length}
+								className="py-8 text-center text-sm text-muted-foreground"
+							>
+								No events match the current filters.
+							</TableCell>
+						</TableRow>
+					) : (
+						table.getRowModel().rows.map((row) => (
+							<TableRow
+								key={row.id}
+								data-state={row.getIsSelected() && "selected"}
+							>
+								{row.getVisibleCells().map((cell) => (
+									<TableCell key={cell.id}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</TableCell>
 								))}
 							</TableRow>
-						))}
-					</TableHeader>
-					<TableBody>
-						{table.getRowModel().rows.length === 0 ? (
-							<TableRow>
-								<TableCell
-									colSpan={columns.length}
-									className="py-8 text-center text-sm text-muted-foreground"
-								>
-									No events match the current filters.
-								</TableCell>
-							</TableRow>
-						) : (
-							table.getRowModel().rows.map((row) => (
-								<TableRow
-									key={row.id}
-									data-state={row.getIsSelected() && "selected"}
-								>
-									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext(),
-											)}
-										</TableCell>
-									))}
-								</TableRow>
-							))
-						)}
-					</TableBody>
-				</Table>
+						))
+					)}
+				</TableBody>
+			</Table>
 		</div>
 	);
 }

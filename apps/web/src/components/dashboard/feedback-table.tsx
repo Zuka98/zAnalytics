@@ -82,12 +82,12 @@ function StatusChip({
 				{status}
 				<ChevronDown className="size-3 opacity-60" />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="start">
+			<DropdownMenuContent align="start" className="w-auto min-w-0">
 				{FEEDBACK_STATUSES.map((s) => (
 					<DropdownMenuItem
 						key={s}
 						onClick={() => handleChange(s)}
-						className="gap-2"
+						className="px-1.5 py-1"
 					>
 						<span
 							className={cn(

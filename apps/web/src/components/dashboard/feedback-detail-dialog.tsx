@@ -20,7 +20,7 @@ import {
 	updateFeedbackNotes,
 	updateFeedbackStatus,
 } from "@/lib/actions/feedback";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import { STATUS_CLASS, TYPE_CLASS, TYPE_LABEL } from "./feedback-variants";
 
 const PILL =
@@ -163,7 +163,7 @@ export function FeedbackDetailDialog({
 
 					<div className="flex gap-3">
 						<span className="w-20 shrink-0 text-muted-foreground">Date</span>
-						<span>{new Date(row.createdAt).toLocaleString()}</span>
+						<span>{formatDateTime(new Date(row.createdAt))}</span>
 					</div>
 
 					<div className="flex flex-col gap-1.5 border-t pt-4">
