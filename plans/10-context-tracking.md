@@ -49,7 +49,7 @@ Collect device/environment context (OS, timezone, browser, locale, screen, hardw
 ## 7. Verification
 
 - [x] **7.1** Run `pnpm type-check` and `pnpm build` across zAnalytics monorepo
-- [ ] **7.2** Start local API (`pnpm dev:api`), load one extension in dev mode, open the side panel, check server logs for the `context` payload on the `open` event
-- [ ] **7.3** Verify `installs` row was updated with `os`, `browser_version`, `timezone`, and `context` columns
-- [ ] **7.4** Submit feedback from the extension, verify `context` is stored on the `feedback` row
-- [ ] **7.5** Check events and feedback tables in the admin panel — verify OS and Browser columns render correctly, and show empty/dash for older rows without context
+- [x] **7.2** Start local API (`pnpm dev:api`), load one extension in dev mode, open the side panel, check server logs for the `context` payload on the `open` event
+- [x] **7.3** Verify `installs` row was updated with `os`, `browser_version`, `timezone`, and `context` columns
+- [x] **7.4** Submit feedback from the extension, verify `context` is stored on the `feedback` row
+- [x] **7.5** Check events and feedback tables in the admin panel — verify OS and Browser columns render correctly, and show empty/dash for older rows without context
