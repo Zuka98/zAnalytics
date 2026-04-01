@@ -63,6 +63,10 @@ export const installs = pgTable(
 		currentVersion: text("current_version"),
 		status: installStatus("status").notNull().default("active"),
 		linkedUserId: text("linked_user_id"),
+		os: text("os"),
+		browserVersion: text("browser_version"),
+		timezone: text("timezone"),
+		context: jsonb("context").$type<Record<string, unknown>>(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
 			.defaultNow(),
@@ -95,6 +99,7 @@ export const events = pgTable(
 			.defaultNow(),
 		version: text("version"),
 		properties: jsonb("properties").$type<Record<string, unknown>>(),
+		context: jsonb("context").$type<Record<string, unknown>>(),
 		source: text("source"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()
@@ -124,6 +129,7 @@ export const feedback = pgTable(
 		email: text("email"),
 		version: text("version"),
 		metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+		context: jsonb("context").$type<Record<string, unknown>>(),
 		status: text("status").notNull().default("new"),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true })
