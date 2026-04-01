@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { collectContext } from "./context.js";
 
 export async function track(
 	eventName: string,
@@ -15,6 +16,8 @@ export async function track(
 	}
 
 	try {
+		const context = await collectContext();
+
 		await fetch(`${config.apiUrl}/v1/events`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -24,6 +27,7 @@ export async function track(
 				eventName,
 				version: config.version,
 				properties,
+				context,
 			}),
 		});
 	} catch (err) {

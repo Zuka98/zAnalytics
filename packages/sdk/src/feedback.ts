@@ -1,4 +1,5 @@
 import { getConfig } from "./config.js";
+import { collectContext } from "./context.js";
 
 export const FEEDBACK_TYPES = [
 	"uninstall",
@@ -44,6 +45,8 @@ export async function submitFeedback(
 	}
 
 	try {
+		const context = await collectContext();
+
 		const res = await fetch(`${config.apiUrl}/v1/feedback`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -56,6 +59,7 @@ export async function submitFeedback(
 				message: opts.message,
 				email: opts.email,
 				metadata: opts.metadata,
+				context,
 			}),
 		});
 
