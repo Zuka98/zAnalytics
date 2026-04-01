@@ -38,6 +38,7 @@ export async function getAllFeedback({
 			message: feedback.message,
 			email: feedback.email,
 			metadata: feedback.metadata,
+			context: feedback.context,
 			createdAt: feedback.createdAt,
 		})
 		.from(feedback)

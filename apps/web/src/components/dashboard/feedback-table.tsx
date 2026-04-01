@@ -40,9 +40,18 @@ interface FeedbackRow {
 	message: string | null;
 	email: string | null;
 	metadata: Record<string, unknown> | null;
+	context: Record<string, unknown> | null;
 	notes?: string | null;
 	createdAt: Date;
 }
+
+const OS_LABEL: Record<string, string> = {
+	mac: "macOS",
+	win: "Windows",
+	linux: "Linux",
+	cros: "ChromeOS",
+	android: "Android",
+};
 
 interface FeedbackTableProps {
 	rows: FeedbackRow[];
@@ -202,6 +211,18 @@ function useFeedbackColumns(showProduct: boolean): ColumnDef<FeedbackRow>[] {
 				return (
 					<span className="text-sm">
 						{rating != null ? `${rating}/5` : "—"}
+					</span>
+				);
+			},
+		},
+		{
+			id: "os",
+			header: "OS",
+			cell: ({ row }) => {
+				const os = row.original.context?.os as string | undefined;
+				return (
+					<span className="text-sm">
+						{os ? (OS_LABEL[os] ?? os) : "—"}
 					</span>
 				);
 			},

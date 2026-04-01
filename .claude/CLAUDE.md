@@ -54,6 +54,10 @@ scripts/                        ← Automation scripts (e.g. create-user.ts)
 - **Custom components**: `apps/web/src/components/<feature>/` (e.g. `auth/`).
 - **Comments in Code: **Do not write unnecessary comments in code to explain things. Code is self explanatory unless there is something that needs to be explicitly mentioned
 
+## Git
+
+- **No AI co-authorship**: Never add `Co-Authored-By` lines referencing Claude or any AI in commits or PRs.
+
 ## Auth
 
 - NextAuth v5 (Auth.js) with JWT sessions and Credentials provider.

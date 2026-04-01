@@ -11,6 +11,66 @@ export async function getProductById(id: string) {
 	return product ?? null;
 }
 
+const INSTALL_SORT_COLUMNS = {
+	lastSeenAt: installs.lastSeenAt,
+	firstSeenAt: installs.firstSeenAt,
+	status: installs.status,
+} as const;
+
+export type InstallSortColumn = keyof typeof INSTALL_SORT_COLUMNS;
+
+export async function getProductInstalls(opts: {
+	productId: string;
+	status?: string | null;
+	installId?: string | null;
+	sortBy?: InstallSortColumn;
+	sortDir?: "asc" | "desc";
+	limit: number;
+	offset: number;
+}) {
+	const conditions = [eq(installs.productId, opts.productId)];
+	if (opts.status) {
+		conditions.push(
+			eq(
+				installs.status,
+				opts.status as "active" | "inactive" | "uninstalled",
+			),
+		);
+	}
+	if (opts.installId) {
+		conditions.push(
+			sql`${installs.installId}::text ilike ${`%${opts.installId}%`}`,
+		);
+	}
+	const where = and(...conditions);
+
+	const sortColumn = INSTALL_SORT_COLUMNS[opts.sortBy ?? "lastSeenAt"];
+	const orderBy = opts.sortDir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+	const rows = await db
+		.select({
+			id: installs.id,
+			installId: installs.installId,
+			status: installs.status,
+			currentVersion: installs.currentVersion,
+			os: installs.os,
+			browserVersion: installs.browserVersion,
+			timezone: installs.timezone,
+			firstSeenAt: installs.firstSeenAt,
+			lastSeenAt: installs.lastSeenAt,
+			_total: sql<number>`count(*) over()`.as("_total"),
+		})
+		.from(installs)
+		.where(where)
+		.orderBy(orderBy)
+		.limit(opts.limit)
+		.offset(opts.offset);
+
+	const total = rows.length > 0 ? rows[0]._total : 0;
+
+	return { rows: rows.map(({ _total, ...rest }) => rest), total };
+}
+
 export async function getProductInstallStats(productId: string) {
 	const rows = await db
 		.select({
@@ -70,6 +130,7 @@ export async function getProductEvents(opts: {
 			installId: events.installId,
 			version: events.version,
 			occurredAt: events.occurredAt,
+			context: events.context,
 			_total: sql<number>`count(*) over()`.as("_total"),
 		})
 		.from(events)
@@ -247,6 +308,7 @@ export async function getProductFeedback(opts: {
 			message: feedback.message,
 			email: feedback.email,
 			metadata: feedback.metadata,
+			context: feedback.context,
 			notes: feedback.notes,
 			createdAt: feedback.createdAt,
 			_total: sql<number>`count(*) over()`.as("_total"),

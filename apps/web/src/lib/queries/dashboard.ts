@@ -1,5 +1,5 @@
 import { db, events, feedback, installs, products } from "@zanalytics/db";
-import { and, count, gte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
 
 function daysAgoDate(days: number) {
 	const d = new Date();
@@ -238,6 +238,67 @@ export async function getDailyEvents(days: number | null) {
 		.orderBy(sql`date_trunc('day', ${events.occurredAt})::date`);
 }
 
+const ALL_INSTALL_SORT_COLUMNS = {
+	lastSeenAt: installs.lastSeenAt,
+	firstSeenAt: installs.firstSeenAt,
+	status: installs.status,
+} as const;
+
+export type AllInstallSortColumn = keyof typeof ALL_INSTALL_SORT_COLUMNS;
+
+export async function getAllInstalls(opts: {
+	status?: string | null;
+	installId?: string | null;
+	sortBy?: AllInstallSortColumn;
+	sortDir?: "asc" | "desc";
+	limit: number;
+	offset: number;
+}) {
+	const conditions = [];
+	if (opts.status) {
+		conditions.push(
+			eq(
+				installs.status,
+				opts.status as "active" | "inactive" | "uninstalled",
+			),
+		);
+	}
+	if (opts.installId) {
+		conditions.push(
+			sql`${installs.installId}::text ilike ${`%${opts.installId}%`}`,
+		);
+	}
+	const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+	const sortColumn = ALL_INSTALL_SORT_COLUMNS[opts.sortBy ?? "lastSeenAt"];
+	const orderBy = opts.sortDir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+	const rows = await db
+		.select({
+			id: installs.id,
+			installId: installs.installId,
+			productName: products.name,
+			status: installs.status,
+			currentVersion: installs.currentVersion,
+			os: installs.os,
+			browserVersion: installs.browserVersion,
+			timezone: installs.timezone,
+			firstSeenAt: installs.firstSeenAt,
+			lastSeenAt: installs.lastSeenAt,
+			_total: sql<number>`count(*) over()`.as("_total"),
+		})
+		.from(installs)
+		.innerJoin(products, sql`${installs.productId} = ${products.id}`)
+		.where(where)
+		.orderBy(orderBy)
+		.limit(opts.limit)
+		.offset(opts.offset);
+
+	const total = rows.length > 0 ? rows[0]._total : 0;
+
+	return { rows: rows.map(({ _total, ...rest }) => rest), total };
+}
+
 export async function getRecentFeedback(days: number | null) {
 	const base = db
 		.select({
@@ -249,6 +310,7 @@ export async function getRecentFeedback(days: number | null) {
 			message: feedback.message,
 			email: feedback.email,
 			metadata: feedback.metadata,
+			context: feedback.context,
 			createdAt: feedback.createdAt,
 		})
 		.from(feedback)

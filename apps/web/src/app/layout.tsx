@@ -8,6 +8,9 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 export const metadata = {
 	title: "zAnalytics",
 	description: "Analytics admin panel",
+	icons: {
+		icon: "/logo.svg",
+	},
 };
 
 export default function RootLayout({

@@ -9,6 +9,8 @@ import { EventsTableControls } from "@/components/dashboard/events-table-control
 import { FeedbackControls } from "@/components/dashboard/feedback-controls";
 import { FeedbackTable } from "@/components/dashboard/feedback-table";
 import { InstallsChart } from "@/components/dashboard/installs-chart";
+import { InstallsTable } from "@/components/dashboard/installs-table";
+import { InstallsTableControls } from "@/components/dashboard/installs-table-controls";
 import { RecentEventsTable } from "@/components/dashboard/recent-events-table";
 import {
 	Card,
@@ -18,6 +20,7 @@ import {
 } from "@/components/shadcn/card";
 import {
 	type EventSortColumn,
+	type InstallSortColumn,
 	getProductById,
 	getProductDailyEvents,
 	getProductDailyInstalls,
@@ -25,6 +28,7 @@ import {
 	getProductEvents,
 	getProductEventTypes,
 	getProductFeedback,
+	getProductInstalls,
 	getProductInstallStats,
 } from "@/lib/queries/product-detail";
 
@@ -61,6 +65,20 @@ export default async function ProductDetailPage({
 	) as EventSortColumn;
 	const sortDir = sp.sortDir === "asc" ? "asc" : "desc";
 
+	const instStatus = sp.instStatus || null;
+	const instInstallId = sp.instInstallId || null;
+	const instPageSize = [10, 25, 50, 100].includes(Number(sp.instPageSize))
+		? Number(sp.instPageSize)
+		: 25;
+	const instPage = Math.max(1, Number(sp.instPage) || 1);
+	const VALID_INST_SORT_COLUMNS = ["lastSeenAt", "firstSeenAt", "status"] as const;
+	const instSortBy = (
+		VALID_INST_SORT_COLUMNS.includes(sp.instSortBy as InstallSortColumn)
+			? sp.instSortBy
+			: "lastSeenAt"
+	) as InstallSortColumn;
+	const instSortDir = sp.instSortDir === "asc" ? "asc" : "desc";
+
 	const fbType = sp.fbType || null;
 	const fbStatus = sp.fbStatus || null;
 	const fbPageSize = [10, 25, 50].includes(Number(sp.fbPageSize))
@@ -72,6 +90,7 @@ export default async function ProductDetailPage({
 		product,
 		stats,
 		{ rows: eventRows, total: totalEvents },
+		{ rows: installRows, total: totalInstalls },
 		eventTypes,
 		dailyInstalls,
 		dailyEvents,
@@ -89,6 +108,15 @@ export default async function ProductDetailPage({
 			sortDir,
 			limit: pageSize,
 			offset: (page - 1) * pageSize,
+		}),
+		getProductInstalls({
+			productId,
+			status: instStatus,
+			installId: instInstallId,
+			sortBy: instSortBy,
+			sortDir: instSortDir,
+			limit: instPageSize,
+			offset: (instPage - 1) * instPageSize,
 		}),
 		getProductEventTypes(productId),
 		getProductDailyInstalls(productId, days),
@@ -160,6 +188,26 @@ export default async function ProductDetailPage({
 					productNames={[product.name]}
 					label={chartLabel}
 				/>
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Installs</h2>
+				<Suspense>
+					<InstallsTableControls
+						currentStatus={instStatus}
+						currentInstallId={instInstallId}
+						currentPageSize={instPageSize}
+						currentPage={instPage}
+						totalInstalls={totalInstalls}
+					/>
+				</Suspense>
+				<div className="mt-3">
+					<InstallsTable
+						installs={installRows}
+						sortBy={instSortBy}
+						sortDir={instSortDir}
+					/>
+				</div>
 			</div>
 
 			<div className="mt-8">

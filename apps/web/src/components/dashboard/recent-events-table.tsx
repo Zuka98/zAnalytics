@@ -29,7 +29,16 @@ interface EventRow {
 	installId: string | null;
 	version: string | null;
 	occurredAt: string | Date;
+	context: Record<string, unknown> | null;
 }
+
+const OS_LABEL: Record<string, string> = {
+	mac: "macOS",
+	win: "Windows",
+	linux: "Linux",
+	cros: "ChromeOS",
+	android: "Android",
+};
 
 const BASE_BADGE =
 	"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap";
@@ -161,6 +170,30 @@ export function RecentEventsTable({
 			cell: ({ row }) => (
 				<span className="text-sm">{row.original.version ?? "—"}</span>
 			),
+		},
+		{
+			id: "os",
+			header: "OS",
+			cell: ({ row }) => {
+				const os = row.original.context?.os as string | undefined;
+				return (
+					<span className="text-sm">
+						{os ? (OS_LABEL[os] ?? os) : "—"}
+					</span>
+				);
+			},
+		},
+		{
+			id: "browser",
+			header: "Browser",
+			cell: ({ row }) => {
+				const ver = row.original.context?.browserVersion as string | undefined;
+				return (
+					<span className="text-sm">
+						{ver ? `Chrome ${ver}` : "—"}
+					</span>
+				);
+			},
 		},
 		{
 			accessorKey: "occurredAt",

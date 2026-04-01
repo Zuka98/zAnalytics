@@ -4,10 +4,14 @@ import { EventBreakdownChart } from "@/components/dashboard/event-breakdown-char
 import { EventsChart } from "@/components/dashboard/events-chart";
 import { FeedbackTable } from "@/components/dashboard/feedback-table";
 import { InstallsChart } from "@/components/dashboard/installs-chart";
+import { InstallsTable } from "@/components/dashboard/installs-table";
+import { InstallsTableControls } from "@/components/dashboard/installs-table-controls";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
 import { ProductStatsTable } from "@/components/dashboard/product-stats-table";
 import { ServiceStatus } from "@/components/dashboard/service-status";
 import {
+	type AllInstallSortColumn,
+	getAllInstalls,
 	getDailyEvents,
 	getDailyInstalls,
 	getEventBreakdown,
@@ -29,10 +33,24 @@ function parseRange(range?: string): { days: number | null; rangeKey: string } {
 export default async function DashboardPage({
 	searchParams,
 }: {
-	searchParams: Promise<{ range?: string }>;
+	searchParams: Promise<Record<string, string | undefined>>;
 }) {
-	const { range } = await searchParams;
-	const { days, rangeKey } = parseRange(range);
+	const sp = await searchParams;
+	const { days, rangeKey } = parseRange(sp.range);
+
+	const instStatus = sp.instStatus || null;
+	const instInstallId = sp.instInstallId || null;
+	const instPageSize = [10, 25, 50, 100].includes(Number(sp.instPageSize))
+		? Number(sp.instPageSize)
+		: 25;
+	const instPage = Math.max(1, Number(sp.instPage) || 1);
+	const VALID_INST_SORT_COLUMNS = ["lastSeenAt", "firstSeenAt", "status"] as const;
+	const instSortBy = (
+		VALID_INST_SORT_COLUMNS.includes(sp.instSortBy as AllInstallSortColumn)
+			? sp.instSortBy
+			: "lastSeenAt"
+	) as AllInstallSortColumn;
+	const instSortDir = sp.instSortDir === "asc" ? "asc" : "desc";
 
 	const [
 		trend,
@@ -40,6 +58,7 @@ export default async function DashboardPage({
 		dailyInstalls,
 		dailyEvents,
 		eventBreakdown,
+		{ rows: installRows, total: totalInstalls },
 		recentFeedback,
 	] = await Promise.all([
 		getOverviewStatsWithTrend(days),
@@ -47,6 +66,14 @@ export default async function DashboardPage({
 		getDailyInstalls(days),
 		getDailyEvents(days),
 		getEventBreakdown(days),
+		getAllInstalls({
+			status: instStatus,
+			installId: instInstallId,
+			sortBy: instSortBy,
+			sortDir: instSortDir,
+			limit: instPageSize,
+			offset: (instPage - 1) * instPageSize,
+		}),
 		getRecentFeedback(days),
 	]);
 
@@ -104,6 +131,27 @@ export default async function DashboardPage({
 					productNames={eventBreakdown.productNames}
 					label={chartLabel}
 				/>
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Installs</h2>
+				<Suspense>
+					<InstallsTableControls
+						currentStatus={instStatus}
+						currentInstallId={instInstallId}
+						currentPageSize={instPageSize}
+						currentPage={instPage}
+						totalInstalls={totalInstalls}
+					/>
+				</Suspense>
+				<div className="mt-3">
+					<InstallsTable
+						installs={installRows}
+						sortBy={instSortBy}
+						sortDir={instSortDir}
+						showProduct
+					/>
+				</div>
 			</div>
 
 			<div className="mt-8">
