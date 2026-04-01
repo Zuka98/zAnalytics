@@ -4,11 +4,12 @@ import {
 	type ColumnDef,
 	flexRender,
 	getCoreRowModel,
+	type RowSelectionState,
 	useReactTable,
 } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { Button } from "@/components/shadcn/button";
 import {
 	Table,
@@ -18,6 +19,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/shadcn/table";
+import { deleteInstalls } from "@/lib/actions/installs";
 import { cn, formatDateTime } from "@/lib/utils";
 
 interface InstallRow {
@@ -71,6 +73,9 @@ export function InstallsTable({
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+	const [editing, setEditing] = useState(false);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [isPending, startTransition] = useTransition();
 
 	const toggleSort = useCallback(
 		(columnId: string) => {
@@ -113,7 +118,61 @@ export function InstallsTable({
 		);
 	}
 
+	const selectedCount = Object.keys(rowSelection).length;
+
+	function handleDelete() {
+		const ids = Object.keys(rowSelection);
+		startTransition(async () => {
+			await deleteInstalls(ids);
+			setRowSelection({});
+			setEditing(false);
+			router.refresh();
+		});
+	}
+
+	function toggleEditing() {
+		setEditing((prev) => {
+			if (prev) setRowSelection({});
+			return !prev;
+		});
+	}
+
 	const columns: ColumnDef<InstallRow>[] = [
+		...(editing
+			? [
+					{
+						id: "select",
+						header: ({
+							table,
+						}: {
+							table: ReturnType<typeof useReactTable<InstallRow>>;
+						}) => (
+							<input
+								type="checkbox"
+								className="size-4 rounded border-border"
+								checked={table.getIsAllPageRowsSelected()}
+								onChange={table.getToggleAllPageRowsSelectedHandler()}
+							/>
+						),
+						cell: ({
+							row,
+						}: {
+							row: {
+								getIsSelected: () => boolean;
+								getToggleSelectedHandler: () => (e: unknown) => void;
+							};
+						}) => (
+							<input
+								type="checkbox"
+								className="size-4 rounded border-border"
+								checked={row.getIsSelected()}
+								onChange={row.getToggleSelectedHandler()}
+							/>
+						),
+						enableSorting: false,
+					} satisfies ColumnDef<InstallRow>,
+				]
+			: []),
 		...(showProduct
 			? [
 					{
@@ -149,9 +208,7 @@ export function InstallsTable({
 			accessorKey: "currentVersion",
 			header: "Version",
 			cell: ({ row }) => (
-				<span className="text-sm">
-					{row.original.currentVersion ?? "—"}
-				</span>
+				<span className="text-sm">{row.original.currentVersion ?? "—"}</span>
 			),
 		},
 		{
@@ -159,7 +216,9 @@ export function InstallsTable({
 			header: "OS",
 			cell: ({ row }) => (
 				<span className="text-sm">
-					{row.original.os ? (OS_LABEL[row.original.os] ?? row.original.os) : "—"}
+					{row.original.os
+						? (OS_LABEL[row.original.os] ?? row.original.os)
+						: "—"}
 				</span>
 			),
 		},
@@ -168,7 +227,9 @@ export function InstallsTable({
 			header: "Browser",
 			cell: ({ row }) => (
 				<span className="text-sm">
-					{row.original.browserVersion ? `Chrome ${row.original.browserVersion}` : "—"}
+					{row.original.browserVersion
+						? `Chrome ${row.original.browserVersion}`
+						: "—"}
 				</span>
 			),
 		},
@@ -204,6 +265,8 @@ export function InstallsTable({
 	const table = useReactTable({
 		data: installs,
 		columns,
+		state: { rowSelection },
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
 		getRowId: (row) => row.id,
 	});
@@ -218,6 +281,35 @@ export function InstallsTable({
 
 	return (
 		<div className="rounded-md border">
+			<div className="flex items-center justify-between border-b px-4 py-3">
+				<h2 className="text-lg font-medium">Installs</h2>
+				<div className="flex items-center gap-3">
+					{editing && selectedCount > 0 && (
+						<>
+							<span className="text-sm text-muted-foreground">
+								{selectedCount} selected
+							</span>
+							<Button
+								variant="destructive"
+								size="sm"
+								disabled={isPending}
+								onClick={handleDelete}
+							>
+								<Trash2 className="mr-1.5 size-3.5" />
+								{isPending ? "Deleting…" : "Delete"}
+							</Button>
+						</>
+					)}
+					<Button
+						variant={editing ? "secondary" : "ghost"}
+						size="sm"
+						onClick={toggleEditing}
+					>
+						<Pencil className="mr-1.5 size-3.5" />
+						{editing ? "Done" : "Edit"}
+					</Button>
+				</div>
+			</div>
 			<Table>
 				<TableHeader>
 					{table.getHeaderGroups().map((hg) => (
@@ -237,7 +329,10 @@ export function InstallsTable({
 				</TableHeader>
 				<TableBody>
 					{table.getRowModel().rows.map((row) => (
-						<TableRow key={row.id}>
+						<TableRow
+							key={row.id}
+							data-state={row.getIsSelected() && "selected"}
+						>
 							{row.getVisibleCells().map((cell) => (
 								<TableCell key={cell.id}>
 									{flexRender(cell.column.columnDef.cell, cell.getContext())}

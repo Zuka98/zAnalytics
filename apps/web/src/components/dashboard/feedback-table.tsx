@@ -5,11 +5,13 @@ import {
 	flexRender,
 	getCoreRowModel,
 	getSortedRowModel,
+	type RowSelectionState,
 	type SortingState,
 	useReactTable,
 } from "@tanstack/react-table";
 import { FEEDBACK_STATUSES } from "@zanalytics/db/feedback-types";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/shadcn/button";
 import {
@@ -26,7 +28,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/shadcn/table";
-import { updateFeedbackStatus } from "@/lib/actions/feedback";
+import { deleteFeedback, updateFeedbackStatus } from "@/lib/actions/feedback";
 import { cn } from "@/lib/utils";
 import { FeedbackDetailDialog } from "./feedback-detail-dialog";
 import { STATUS_CLASS, TYPE_CLASS, TYPE_LABEL } from "./feedback-variants";
@@ -113,8 +115,46 @@ function StatusChip({
 	);
 }
 
-function useFeedbackColumns(showProduct: boolean): ColumnDef<FeedbackRow>[] {
+function useFeedbackColumns(
+	showProduct: boolean,
+	editing: boolean,
+): ColumnDef<FeedbackRow>[] {
 	return [
+		...(editing
+			? [
+					{
+						id: "select",
+						header: ({
+							table,
+						}: {
+							table: ReturnType<typeof useReactTable<FeedbackRow>>;
+						}) => (
+							<input
+								type="checkbox"
+								className="size-4 rounded border-border"
+								checked={table.getIsAllPageRowsSelected()}
+								onChange={table.getToggleAllPageRowsSelectedHandler()}
+							/>
+						),
+						cell: ({
+							row,
+						}: {
+							row: {
+								getIsSelected: () => boolean;
+								getToggleSelectedHandler: () => (e: unknown) => void;
+							};
+						}) => (
+							<input
+								type="checkbox"
+								className="size-4 rounded border-border"
+								checked={row.getIsSelected()}
+								onChange={row.getToggleSelectedHandler()}
+							/>
+						),
+						enableSorting: false,
+					} satisfies ColumnDef<FeedbackRow>,
+				]
+			: []),
 		{
 			accessorKey: "type",
 			header: ({ column }) => (
@@ -221,9 +261,7 @@ function useFeedbackColumns(showProduct: boolean): ColumnDef<FeedbackRow>[] {
 			cell: ({ row }) => {
 				const os = row.original.context?.os as string | undefined;
 				return (
-					<span className="text-sm">
-						{os ? (OS_LABEL[os] ?? os) : "—"}
-					</span>
+					<span className="text-sm">{os ? (OS_LABEL[os] ?? os) : "—"}</span>
 				);
 			},
 		},
@@ -254,20 +292,45 @@ export function FeedbackTable({
 	rows,
 	showProduct = false,
 }: FeedbackTableProps) {
+	const router = useRouter();
 	const [sorting, setSorting] = useState<SortingState>([
 		{ id: "createdAt", desc: true },
 	]);
 	const [selectedRow, setSelectedRow] = useState<FeedbackRow | null>(null);
-	const columns = useFeedbackColumns(showProduct);
+	const [editing, setEditing] = useState(false);
+	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [isPending, startTransition] = useTransition();
+	const columns = useFeedbackColumns(showProduct, editing);
 
 	const table = useReactTable({
 		data: rows,
 		columns,
-		state: { sorting },
+		state: { sorting, rowSelection },
 		onSortingChange: setSorting,
+		onRowSelectionChange: setRowSelection,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
+		getRowId: (row) => row.id,
 	});
+
+	const selectedCount = Object.keys(rowSelection).length;
+
+	function handleDelete() {
+		const ids = Object.keys(rowSelection);
+		startTransition(async () => {
+			await deleteFeedback(ids);
+			setRowSelection({});
+			setEditing(false);
+			router.refresh();
+		});
+	}
+
+	function toggleEditing() {
+		setEditing((prev) => {
+			if (prev) setRowSelection({});
+			return !prev;
+		});
+	}
 
 	if (rows.length === 0) {
 		return (
@@ -280,6 +343,35 @@ export function FeedbackTable({
 	return (
 		<>
 			<div className="rounded-md border">
+				<div className="flex items-center justify-between border-b px-4 py-3">
+					<h2 className="text-lg font-medium">Feedback</h2>
+					<div className="flex items-center gap-3">
+						{editing && selectedCount > 0 && (
+							<>
+								<span className="text-sm text-muted-foreground">
+									{selectedCount} selected
+								</span>
+								<Button
+									variant="destructive"
+									size="sm"
+									disabled={isPending}
+									onClick={handleDelete}
+								>
+									<Trash2 className="mr-1.5 size-3.5" />
+									{isPending ? "Deleting…" : "Delete"}
+								</Button>
+							</>
+						)}
+						<Button
+							variant={editing ? "secondary" : "ghost"}
+							size="sm"
+							onClick={toggleEditing}
+						>
+							<Pencil className="mr-1.5 size-3.5" />
+							{editing ? "Done" : "Edit"}
+						</Button>
+					</div>
+				</div>
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((hg) => (
@@ -303,9 +395,12 @@ export function FeedbackTable({
 								key={row.id}
 								tabIndex={0}
 								className="cursor-pointer"
-								onClick={() => setSelectedRow(row.original)}
+								data-state={row.getIsSelected() && "selected"}
+								onClick={() => {
+									if (!editing) setSelectedRow(row.original);
+								}}
 								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ")
+									if (!editing && (e.key === "Enter" || e.key === " "))
 										setSelectedRow(row.original);
 								}}
 							>
