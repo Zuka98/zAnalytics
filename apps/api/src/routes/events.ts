@@ -12,6 +12,7 @@ const eventBodySchema = {
 		eventName: { type: "string", minLength: 1 },
 		version: { type: "string" },
 		properties: { type: "object", additionalProperties: true },
+		context: { type: "object", additionalProperties: true },
 	},
 	additionalProperties: false,
 } as const;
@@ -22,6 +23,7 @@ interface EventBody {
 	eventName: string;
 	version?: string;
 	properties?: Record<string, unknown>;
+	context?: Record<string, unknown>;
 }
 
 const INSTALL_EVENTS = new Set(["install", "uninstall_page_opened"]);
@@ -46,6 +48,7 @@ export async function eventRoutes(app: FastifyInstance) {
 				eventName,
 				version,
 				properties,
+				context,
 			} = request.body;
 
 			// Look up product by key
@@ -79,12 +82,17 @@ export async function eventRoutes(app: FastifyInstance) {
 					eventName,
 					version,
 					properties,
+					context,
 				})
 				.returning();
 
 			// Update installs table based on event type
 			if (installId) {
 				const now = new Date();
+
+				const ctxOs = context?.os as string | undefined;
+				const ctxBrowserVersion = context?.browserVersion as string | undefined;
+				const ctxTimezone = context?.timezone as string | undefined;
 
 				if (eventName === "install" || ACTIVITY_EVENTS.has(eventName)) {
 					// Upsert: create record on install, or update lastSeenAt on activity.
@@ -96,6 +104,10 @@ export async function eventRoutes(app: FastifyInstance) {
 							installId,
 							currentVersion: version,
 							status: "active",
+							os: ctxOs,
+							browserVersion: ctxBrowserVersion,
+							timezone: ctxTimezone,
+							context,
 						})
 						.onConflictDoUpdate({
 							target: [installs.productId, installs.installId],
@@ -104,6 +116,10 @@ export async function eventRoutes(app: FastifyInstance) {
 								lastSeenAt: now,
 								status: "active",
 								updatedAt: now,
+								...(ctxOs && { os: ctxOs }),
+								...(ctxBrowserVersion && { browserVersion: ctxBrowserVersion }),
+								...(ctxTimezone && { timezone: ctxTimezone }),
+								...(context && { context }),
 							},
 						});
 				} else if (eventName === "uninstall_page_opened") {

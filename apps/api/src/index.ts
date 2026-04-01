@@ -37,6 +37,16 @@ app.get("/health", async () => {
 	};
 });
 
+app.addHook("onSend", (request, reply, payload, done) => {
+	if (reply.statusCode >= 400) {
+		request.log.warn(
+			{ body: request.body, responseBody: payload },
+			`${request.method} ${request.url} → ${reply.statusCode}`,
+		);
+	}
+	done();
+});
+
 app.register(productRoutes);
 app.register(eventRoutes);
 app.register(feedbackRoutes);
@@ -48,4 +58,5 @@ app.listen({ port, host: "0.0.0.0" }, (err) => {
 		app.log.error(err);
 		process.exit(1);
 	}
+	app.log.info(`zAnalytics API running on http://localhost:${port}`);
 });

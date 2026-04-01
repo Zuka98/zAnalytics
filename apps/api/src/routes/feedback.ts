@@ -15,6 +15,7 @@ const feedbackBodySchema = {
 		email: { type: "string", format: "email" },
 		version: { type: "string" },
 		metadata: { type: "object", additionalProperties: true },
+		context: { type: "object", additionalProperties: true },
 	},
 	additionalProperties: false,
 } as const;
@@ -28,6 +29,7 @@ interface FeedbackBody {
 	email?: string;
 	version?: string;
 	metadata?: Record<string, unknown>;
+	context?: Record<string, unknown>;
 }
 
 export async function feedbackRoutes(app: FastifyInstance) {
@@ -52,6 +54,7 @@ export async function feedbackRoutes(app: FastifyInstance) {
 				email,
 				version,
 				metadata,
+				context,
 			} = request.body;
 
 			// Validate feedback type
@@ -85,6 +88,7 @@ export async function feedbackRoutes(app: FastifyInstance) {
 					email,
 					version,
 					metadata,
+					context,
 				})
 				.returning({ id: feedback.id });
 
@@ -95,6 +99,7 @@ export async function feedbackRoutes(app: FastifyInstance) {
 				eventName: "feedback_submitted",
 				version,
 				properties: { type, reason },
+				context,
 			});
 
 			return reply.status(201).send({ ok: true, feedbackId: row.id });
