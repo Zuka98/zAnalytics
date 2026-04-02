@@ -28,10 +28,10 @@ export interface Context {
 	memory: number | undefined;
 	cores: number;
 	touchPoints: number;
-	screenWidth: number;
-	screenHeight: number;
-	pixelRatio: number;
-	colorDepth: number;
+	screenWidth: number | undefined;
+	screenHeight: number | undefined;
+	pixelRatio: number | undefined;
+	colorDepth: number | undefined;
 	browser: string;
 	browserVersion: string;
 	connectionType: string | undefined;
@@ -75,10 +75,10 @@ export async function collectContext(): Promise<Context> {
 		memory: navigator.deviceMemory,
 		cores: navigator.hardwareConcurrency,
 		touchPoints: navigator.maxTouchPoints,
-		screenWidth: screen.width,
-		screenHeight: screen.height,
-		pixelRatio: window.devicePixelRatio,
-		colorDepth: screen.colorDepth,
+		screenWidth: typeof screen !== "undefined" ? screen.width : undefined,
+		screenHeight: typeof screen !== "undefined" ? screen.height : undefined,
+		pixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : undefined,
+		colorDepth: typeof screen !== "undefined" ? screen.colorDepth : undefined,
 		browser,
 		browserVersion,
 		connectionType: navigator.connection?.effectiveType,
