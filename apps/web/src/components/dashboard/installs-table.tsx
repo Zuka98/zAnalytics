@@ -21,6 +21,7 @@ import {
 } from "@/components/shadcn/table";
 import { deleteInstalls } from "@/lib/actions/installs";
 import { cn, formatDateTime } from "@/lib/utils";
+import { MetadataTooltip } from "./metadata-tooltip";
 
 interface InstallRow {
 	id: string;
@@ -348,18 +349,33 @@ export function InstallsTable({
 					))}
 				</TableHeader>
 				<TableBody>
-					{table.getRowModel().rows.map((row) => (
-						<TableRow
-							key={row.id}
-							data-state={row.getIsSelected() && "selected"}
-						>
-							{row.getVisibleCells().map((cell) => (
-								<TableCell key={cell.id}>
-									{flexRender(cell.column.columnDef.cell, cell.getContext())}
-								</TableCell>
-							))}
-						</TableRow>
-					))}
+					{table.getRowModel().rows.map((row) => {
+						const r = row.original;
+						const meta: Record<string, unknown> = {};
+						if (r.os) meta.os = OS_LABEL[r.os] ?? r.os;
+						if (r.browserVersion) meta.browser = `Chrome ${r.browserVersion}`;
+						if (r.timezone) meta.timezone = r.timezone;
+						if (r.linkedUserId) meta.userId = r.linkedUserId;
+						if (r.linkedUserEmail) meta.email = r.linkedUserEmail;
+						const rowEl = (
+							<TableRow
+								key={row.id}
+								data-state={row.getIsSelected() && "selected"}
+							>
+								{row.getVisibleCells().map((cell) => (
+									<TableCell key={cell.id}>
+										{flexRender(cell.column.columnDef.cell, cell.getContext())}
+									</TableCell>
+								))}
+							</TableRow>
+						);
+						if (editing) return rowEl;
+						return (
+							<MetadataTooltip key={row.id} data={meta}>
+								{rowEl}
+							</MetadataTooltip>
+						);
+					})}
 				</TableBody>
 			</Table>
 		</div>

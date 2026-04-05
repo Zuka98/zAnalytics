@@ -31,10 +31,7 @@ export async function getProductInstalls(opts: {
 	const conditions = [eq(installs.productId, opts.productId)];
 	if (opts.status) {
 		conditions.push(
-			eq(
-				installs.status,
-				opts.status as "active" | "inactive" | "uninstalled",
-			),
+			eq(installs.status, opts.status as "active" | "inactive" | "uninstalled"),
 		);
 	}
 	if (opts.installId) {
@@ -133,6 +130,7 @@ export async function getProductEvents(opts: {
 			version: events.version,
 			occurredAt: events.occurredAt,
 			context: events.context,
+			properties: events.properties,
 			_total: sql<number>`count(*) over()`.as("_total"),
 		})
 		.from(events)

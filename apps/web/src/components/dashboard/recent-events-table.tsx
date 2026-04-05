@@ -22,6 +22,7 @@ import {
 import { deleteEvents } from "@/lib/actions/events";
 import { cn, formatDateTime } from "@/lib/utils";
 import { EVENT_CLASS, EVENT_LABEL } from "./feedback-variants";
+import { MetadataTooltip } from "./metadata-tooltip";
 
 interface EventRow {
 	id: string;
@@ -30,6 +31,8 @@ interface EventRow {
 	version: string | null;
 	occurredAt: string | Date;
 	context: Record<string, unknown> | null;
+	properties: Record<string, unknown> | null;
+	productName?: string;
 }
 
 const OS_LABEL: Record<string, string> = {
@@ -47,12 +50,14 @@ interface RecentEventsTableProps {
 	events: EventRow[];
 	sortBy: string;
 	sortDir: "asc" | "desc";
+	showProduct?: boolean;
 }
 
 export function RecentEventsTable({
 	events,
 	sortBy,
 	sortDir,
+	showProduct = false,
 }: RecentEventsTableProps) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -155,6 +160,17 @@ export function RecentEventsTable({
 				);
 			},
 		},
+		...(showProduct
+			? ([
+					{
+						accessorKey: "productName",
+						header: "Product",
+						cell: ({ row }) => (
+							<span className="text-sm">{row.original.productName ?? "—"}</span>
+						),
+					},
+				] as ColumnDef<EventRow>[])
+			: []),
 		{
 			accessorKey: "installId",
 			header: "Install ID",
@@ -177,9 +193,7 @@ export function RecentEventsTable({
 			cell: ({ row }) => {
 				const os = row.original.context?.os as string | undefined;
 				return (
-					<span className="text-sm">
-						{os ? (OS_LABEL[os] ?? os) : "—"}
-					</span>
+					<span className="text-sm">{os ? (OS_LABEL[os] ?? os) : "—"}</span>
 				);
 			},
 		},
@@ -188,11 +202,7 @@ export function RecentEventsTable({
 			header: "Browser",
 			cell: ({ row }) => {
 				const ver = row.original.context?.browserVersion as string | undefined;
-				return (
-					<span className="text-sm">
-						{ver ? `Chrome ${ver}` : "—"}
-					</span>
-				);
+				return <span className="text-sm">{ver ? `Chrome ${ver}` : "—"}</span>;
 			},
 		},
 		{
@@ -304,18 +314,33 @@ export function RecentEventsTable({
 							</TableCell>
 						</TableRow>
 					) : (
-						table.getRowModel().rows.map((row) => (
-							<TableRow
-								key={row.id}
-								data-state={row.getIsSelected() && "selected"}
-							>
-								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
-										{flexRender(cell.column.columnDef.cell, cell.getContext())}
-									</TableCell>
-								))}
-							</TableRow>
-						))
+						table.getRowModel().rows.map((row) => {
+							const merged = {
+								...(row.original.properties ?? {}),
+								...(row.original.context ?? {}),
+							};
+							const rowEl = (
+								<TableRow
+									key={row.id}
+									data-state={row.getIsSelected() && "selected"}
+								>
+									{row.getVisibleCells().map((cell) => (
+										<TableCell key={cell.id}>
+											{flexRender(
+												cell.column.columnDef.cell,
+												cell.getContext(),
+											)}
+										</TableCell>
+									))}
+								</TableRow>
+							);
+							if (editing) return rowEl;
+							return (
+								<MetadataTooltip key={row.id} data={merged}>
+									{rowEl}
+								</MetadataTooltip>
+							);
+						})
 					)}
 				</TableBody>
 			</Table>

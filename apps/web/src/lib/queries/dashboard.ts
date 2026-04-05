@@ -1,6 +1,24 @@
 import { db, events, feedback, installs, products } from "@zanalytics/db";
 import { and, asc, count, desc, eq, gte, sql } from "drizzle-orm";
 
+export async function getRecentEvents(limit = 20) {
+	return db
+		.select({
+			id: events.id,
+			eventName: events.eventName,
+			installId: events.installId,
+			version: events.version,
+			occurredAt: events.occurredAt,
+			context: events.context,
+			properties: events.properties,
+			productName: products.name,
+		})
+		.from(events)
+		.innerJoin(products, eq(events.productId, products.id))
+		.orderBy(desc(events.occurredAt))
+		.limit(limit);
+}
+
 function daysAgoDate(days: number) {
 	const d = new Date();
 	d.setHours(0, 0, 0, 0);
@@ -261,10 +279,7 @@ export async function getAllInstalls(opts: {
 	const conditions = [];
 	if (opts.status) {
 		conditions.push(
-			eq(
-				installs.status,
-				opts.status as "active" | "inactive" | "uninstalled",
-			),
+			eq(installs.status, opts.status as "active" | "inactive" | "uninstalled"),
 		);
 	}
 	if (opts.installId) {

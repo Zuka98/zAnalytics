@@ -8,6 +8,7 @@ import { InstallsTable } from "@/components/dashboard/installs-table";
 import { InstallsTableControls } from "@/components/dashboard/installs-table-controls";
 import { OverviewStats } from "@/components/dashboard/overview-stats";
 import { ProductStatsTable } from "@/components/dashboard/product-stats-table";
+import { RecentEventsTable } from "@/components/dashboard/recent-events-table";
 import { ServiceStatus } from "@/components/dashboard/service-status";
 import {
 	type AllInstallSortColumn,
@@ -17,6 +18,7 @@ import {
 	getEventBreakdown,
 	getOverviewStatsWithTrend,
 	getProductStats,
+	getRecentEvents,
 	getRecentFeedback,
 } from "@/lib/queries/dashboard";
 
@@ -44,7 +46,11 @@ export default async function DashboardPage({
 		? Number(sp.instPageSize)
 		: 25;
 	const instPage = Math.max(1, Number(sp.instPage) || 1);
-	const VALID_INST_SORT_COLUMNS = ["lastSeenAt", "firstSeenAt", "status"] as const;
+	const VALID_INST_SORT_COLUMNS = [
+		"lastSeenAt",
+		"firstSeenAt",
+		"status",
+	] as const;
 	const instSortBy = (
 		VALID_INST_SORT_COLUMNS.includes(sp.instSortBy as AllInstallSortColumn)
 			? sp.instSortBy
@@ -60,6 +66,7 @@ export default async function DashboardPage({
 		eventBreakdown,
 		{ rows: installRows, total: totalInstalls },
 		recentFeedback,
+		recentEvents,
 	] = await Promise.all([
 		getOverviewStatsWithTrend(days),
 		getProductStats(),
@@ -75,6 +82,7 @@ export default async function DashboardPage({
 			offset: (instPage - 1) * instPageSize,
 		}),
 		getRecentFeedback(days),
+		getRecentEvents(),
 	]);
 
 	const chartLabel =
@@ -136,6 +144,16 @@ export default async function DashboardPage({
 			<div className="mt-8">
 				<h2 className="mb-4 text-lg font-medium">Products</h2>
 				<ProductStatsTable products={products} />
+			</div>
+
+			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Recent Events</h2>
+				<RecentEventsTable
+					events={recentEvents}
+					sortBy="occurredAt"
+					sortDir="desc"
+					showProduct
+				/>
 			</div>
 
 			<div className="mt-8">
