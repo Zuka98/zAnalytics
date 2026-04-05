@@ -134,6 +134,11 @@ export default async function DashboardPage({
 			</div>
 
 			<div className="mt-8">
+				<h2 className="mb-4 text-lg font-medium">Products</h2>
+				<ProductStatsTable products={products} />
+			</div>
+
+			<div className="mt-8">
 				<h2 className="mb-4 text-lg font-medium">Installs</h2>
 				<Suspense>
 					<InstallsTableControls
@@ -152,11 +157,6 @@ export default async function DashboardPage({
 						showProduct
 					/>
 				</div>
-			</div>
-
-			<div className="mt-8">
-				<h2 className="mb-4 text-lg font-medium">Products</h2>
-				<ProductStatsTable products={products} />
 			</div>
 
 			<div className="mt-8">

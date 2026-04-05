@@ -22,6 +22,10 @@ export async function getProductStats() {
 				sql<number>`count(${installs.id}) filter (where ${installs.status} = 'uninstalled')`.as(
 					"uninstall_count",
 				),
+			eventCount:
+				sql<number>`(select count(*) from events where product_id = ${products.id})`.as(
+					"event_count",
+				),
 			lastActivity:
 				sql<Date | null>`(select max(occurred_at) from events where product_id = ${products.id})`.as(
 					"last_activity",

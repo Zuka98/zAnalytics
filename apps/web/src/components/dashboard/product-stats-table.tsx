@@ -27,6 +27,7 @@ interface ProductRow {
 	platform: string;
 	activeCount: number;
 	uninstallCount: number;
+	eventCount: number;
 	lastActivity: Date | null;
 }
 
@@ -98,6 +99,25 @@ const columns: ColumnDef<ProductRow>[] = [
 		cell: ({ row }) => (
 			<span className="text-red-600 dark:text-red-400">
 				{row.original.uninstallCount.toLocaleString()}
+			</span>
+		),
+	},
+	{
+		accessorKey: "eventCount",
+		header: ({ column }) => (
+			<Button
+				variant="ghost"
+				size="sm"
+				className="-ml-3 h-8"
+				onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+			>
+				Events
+				<ArrowUpDown className="ml-1.5 size-3.5 opacity-50" />
+			</Button>
+		),
+		cell: ({ row }) => (
+			<span className="font-medium">
+				{row.original.eventCount.toLocaleString()}
 			</span>
 		),
 	},
