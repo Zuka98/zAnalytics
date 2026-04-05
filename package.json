@@ -1,5 +1,5 @@
 {
-	"name": "ts-monorepo-template",
+	"name": "zanalytics-monorepo",
 	"version": "0.1.0",
 	"private": true,
 	"packageManager": "pnpm@10.23.0",
