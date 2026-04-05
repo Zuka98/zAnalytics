@@ -1,8 +1,14 @@
+export interface UserInfo {
+	uid: string;
+	email?: string;
+}
+
 export interface SdkConfig {
 	productKey: string;
 	version: string;
 	apiUrl: string;
 	installId: string | null;
+	user: UserInfo | null;
 }
 
 let _config: SdkConfig | null = null;
@@ -23,4 +29,9 @@ export function getConfig(): SdkConfig {
 export function setInstallId(installId: string): void {
 	if (!_config) return;
 	_config.installId = installId;
+}
+
+export function setUserInfo(user: UserInfo | null): void {
+	if (!_config) return;
+	_config.user = user;
 }

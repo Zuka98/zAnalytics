@@ -16,3 +16,5 @@ export { trackInstall, trackOpen, trackUpdate } from "./lifecycle.js";
 export type { StorageAdapter } from "./storage.js";
 export { chromeStorageAdapter } from "./storage.js";
 export { track } from "./track.js";
+export type { SetUserOptions } from "./user.js";
+export { setUser } from "./user.js";

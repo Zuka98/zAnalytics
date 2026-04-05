@@ -19,6 +19,7 @@ export async function init(opts: InitOptions): Promise<void> {
 		version: opts.version,
 		apiUrl: opts.apiUrl.replace(/\/$/, ""),
 		installId: null,
+		user: null,
 	});
 
 	let installId = await storage.get(INSTALL_ID_KEY);
