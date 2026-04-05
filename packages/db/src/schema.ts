@@ -63,6 +63,7 @@ export const installs = pgTable(
 		currentVersion: text("current_version"),
 		status: installStatus("status").notNull().default("active"),
 		linkedUserId: text("linked_user_id"),
+		linkedUserEmail: text("linked_user_email"),
 		os: text("os"),
 		browserVersion: text("browser_version"),
 		timezone: text("timezone"),

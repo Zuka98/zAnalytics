@@ -1,0 +1,1 @@
+ALTER TABLE "installs" ADD COLUMN "linked_user_email" text;
