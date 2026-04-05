@@ -53,6 +53,8 @@ export async function getProductInstalls(opts: {
 			installId: installs.installId,
 			status: installs.status,
 			currentVersion: installs.currentVersion,
+			linkedUserId: installs.linkedUserId,
+			linkedUserEmail: installs.linkedUserEmail,
 			os: installs.os,
 			browserVersion: installs.browserVersion,
 			timezone: installs.timezone,

@@ -28,6 +28,8 @@ interface InstallRow {
 	productName?: string;
 	status: "active" | "inactive" | "uninstalled";
 	currentVersion: string | null;
+	linkedUserId: string | null;
+	linkedUserEmail: string | null;
 	os: string | null;
 	browserVersion: string | null;
 	timezone: string | null;
@@ -209,6 +211,24 @@ export function InstallsTable({
 			header: "Version",
 			cell: ({ row }) => (
 				<span className="text-sm">{row.original.currentVersion ?? "—"}</span>
+			),
+		},
+		{
+			accessorKey: "linkedUserId",
+			header: "User ID",
+			cell: ({ row }) => (
+				<span className="font-mono text-xs text-muted-foreground">
+					{row.original.linkedUserId ?? "—"}
+				</span>
+			),
+		},
+		{
+			accessorKey: "linkedUserEmail",
+			header: "Email",
+			cell: ({ row }) => (
+				<span className="text-sm text-muted-foreground">
+					{row.original.linkedUserEmail ?? "—"}
+				</span>
 			),
 		},
 		{
