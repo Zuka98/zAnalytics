@@ -12,6 +12,7 @@ const { default: cors } = await import("@fastify/cors");
 const { default: rateLimit } = await import("@fastify/rate-limit");
 const { eventRoutes } = await import("./routes/events.js");
 const { feedbackRoutes } = await import("./routes/feedback.js");
+const { installRoutes } = await import("./routes/installs.js");
 const { productRoutes } = await import("./routes/products.js");
 
 const app = Fastify({
@@ -49,6 +50,7 @@ app.addHook("onSend", (request, reply, payload, done) => {
 
 app.register(productRoutes);
 app.register(eventRoutes);
+app.register(installRoutes);
 app.register(feedbackRoutes);
 
 const port = Number(process.env.PORT) || 3001;
