@@ -15,6 +15,7 @@ interface EventsTableControlsProps {
 	currentPageSize: number;
 	currentPage: number;
 	totalEvents: number;
+	hideInstallIdSearch?: boolean;
 }
 
 const PAGE_SIZES = [10, 25, 50, 100];
@@ -27,6 +28,7 @@ export function EventsTableControls({
 	currentPageSize,
 	currentPage,
 	totalEvents,
+	hideInstallIdSearch,
 }: EventsTableControlsProps) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -75,19 +77,21 @@ export function EventsTableControls({
 					))}
 				</select>
 
-				<div className="relative">
-					<Search className="absolute top-2 left-2 size-4 text-muted-foreground" />
-					<Input
-						placeholder="Install ID"
-						defaultValue={currentInstallId ?? ""}
-						onChange={(e) =>
-							debouncedUpdate({
-								installId: e.target.value || null,
-							})
-						}
-						className="h-8 pl-8 text-sm"
-					/>
-				</div>
+				{!hideInstallIdSearch && (
+					<div className="relative">
+						<Search className="absolute top-2 left-2 size-4 text-muted-foreground" />
+						<Input
+							placeholder="Install ID"
+							defaultValue={currentInstallId ?? ""}
+							onChange={(e) =>
+								debouncedUpdate({
+									installId: e.target.value || null,
+								})
+							}
+							className="h-8 pl-8 text-sm"
+						/>
+					</div>
+				)}
 
 				<div className="relative">
 					<Search className="absolute top-2 left-2 size-4 text-muted-foreground" />

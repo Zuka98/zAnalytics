@@ -8,6 +8,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { Button } from "@/components/shadcn/button";
@@ -26,6 +27,7 @@ import { MetadataTooltip } from "./metadata-tooltip";
 interface InstallRow {
 	id: string;
 	installId: string;
+	productId?: string;
 	productName?: string;
 	status: "active" | "inactive" | "uninstalled";
 	currentVersion: string | null;
@@ -192,11 +194,18 @@ export function InstallsTable({
 		{
 			accessorKey: "installId",
 			header: "Install ID",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs text-muted-foreground">
-					{row.original.installId}
-				</span>
-			),
+			cell: ({ row }) => {
+				const pid = row.original.productId;
+				const base = pid ? `/dashboard/${pid}` : pathname.replace(/\/$/, "");
+				return (
+					<Link
+						href={`${base}/installs/${row.original.installId}`}
+						className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+					>
+						{row.original.installId}
+					</Link>
+				);
+			},
 		},
 		{
 			accessorKey: "status",

@@ -11,6 +11,7 @@ export async function getRecentEvents(limit = 20) {
 			occurredAt: events.occurredAt,
 			context: events.context,
 			properties: events.properties,
+			productId: events.productId,
 			productName: products.name,
 		})
 		.from(events)
@@ -296,6 +297,7 @@ export async function getAllInstalls(opts: {
 		.select({
 			id: installs.id,
 			installId: installs.installId,
+			productId: installs.productId,
 			productName: products.name,
 			status: installs.status,
 			currentVersion: installs.currentVersion,

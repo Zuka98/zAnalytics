@@ -8,6 +8,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { Button } from "@/components/shadcn/button";
@@ -32,6 +33,7 @@ interface EventRow {
 	occurredAt: string | Date;
 	context: Record<string, unknown> | null;
 	properties: Record<string, unknown> | null;
+	productId?: string;
 	productName?: string;
 }
 
@@ -51,6 +53,7 @@ interface RecentEventsTableProps {
 	sortBy: string;
 	sortDir: "asc" | "desc";
 	showProduct?: boolean;
+	hideInstallId?: boolean;
 }
 
 export function RecentEventsTable({
@@ -58,6 +61,7 @@ export function RecentEventsTable({
 	sortBy,
 	sortDir,
 	showProduct = false,
+	hideInstallId = false,
 }: RecentEventsTableProps) {
 	const router = useRouter();
 	const pathname = usePathname();
@@ -171,15 +175,30 @@ export function RecentEventsTable({
 					},
 				] as ColumnDef<EventRow>[])
 			: []),
-		{
-			accessorKey: "installId",
-			header: "Install ID",
-			cell: ({ row }) => (
-				<span className="font-mono text-xs text-muted-foreground">
-					{row.original.installId ?? "—"}
-				</span>
-			),
-		},
+		...(hideInstallId
+			? []
+			: [
+					{
+						accessorKey: "installId",
+						header: "Install ID",
+						cell: ({ row }: { row: { original: EventRow } }) => {
+							const id = row.original.installId;
+							if (!id) return <span className="text-sm">—</span>;
+							const pid = row.original.productId;
+							const base = pid
+								? `/dashboard/${pid}`
+								: pathname.replace(/\/$/, "");
+							return (
+								<Link
+									href={`${base}/installs/${id}`}
+									className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+								>
+									{id}
+								</Link>
+							);
+						},
+					} satisfies ColumnDef<EventRow>,
+				]),
 		{
 			accessorKey: "version",
 			header: "Version",

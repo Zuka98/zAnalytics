@@ -283,6 +283,72 @@ export async function getProductDailyEvents(
 		.orderBy(sql`date_trunc('day', ${events.occurredAt})::date`);
 }
 
+export async function getInstallByInstallId(
+	productId: string,
+	installId: string,
+) {
+	const [row] = await db
+		.select({
+			id: installs.id,
+			installId: installs.installId,
+			status: installs.status,
+			currentVersion: installs.currentVersion,
+			linkedUserId: installs.linkedUserId,
+			linkedUserEmail: installs.linkedUserEmail,
+			os: installs.os,
+			browserVersion: installs.browserVersion,
+			timezone: installs.timezone,
+			context: installs.context,
+			firstSeenAt: installs.firstSeenAt,
+			lastSeenAt: installs.lastSeenAt,
+		})
+		.from(installs)
+		.where(
+			and(eq(installs.productId, productId), eq(installs.installId, installId)),
+		)
+		.limit(1);
+
+	return row ?? null;
+}
+
+export async function getEventsByInstallId(opts: {
+	productId: string;
+	installId: string;
+	sortBy?: EventSortColumn;
+	sortDir?: "asc" | "desc";
+	limit: number;
+	offset: number;
+}) {
+	const where = and(
+		eq(events.productId, opts.productId),
+		eq(events.installId, opts.installId),
+	);
+
+	const sortColumn = EVENT_SORT_COLUMNS[opts.sortBy ?? "occurredAt"];
+	const orderBy = opts.sortDir === "asc" ? asc(sortColumn) : desc(sortColumn);
+
+	const rows = await db
+		.select({
+			id: events.id,
+			eventName: events.eventName,
+			installId: events.installId,
+			version: events.version,
+			occurredAt: events.occurredAt,
+			context: events.context,
+			properties: events.properties,
+			_total: sql<number>`count(*) over()`.as("_total"),
+		})
+		.from(events)
+		.where(where)
+		.orderBy(orderBy)
+		.limit(opts.limit)
+		.offset(opts.offset);
+
+	const total = rows.length > 0 ? rows[0]._total : 0;
+
+	return { rows: rows.map(({ _total, ...rest }) => rest), total };
+}
+
 export async function getProductFeedback(opts: {
 	productId: string;
 	type?: string | null;

@@ -20,7 +20,6 @@ import {
 } from "@/components/shadcn/card";
 import {
 	type EventSortColumn,
-	type InstallSortColumn,
 	getProductById,
 	getProductDailyEvents,
 	getProductDailyInstalls,
@@ -28,8 +27,9 @@ import {
 	getProductEvents,
 	getProductEventTypes,
 	getProductFeedback,
-	getProductInstalls,
 	getProductInstallStats,
+	getProductInstalls,
+	type InstallSortColumn,
 } from "@/lib/queries/product-detail";
 
 export default async function ProductDetailPage({
@@ -71,7 +71,11 @@ export default async function ProductDetailPage({
 		? Number(sp.instPageSize)
 		: 25;
 	const instPage = Math.max(1, Number(sp.instPage) || 1);
-	const VALID_INST_SORT_COLUMNS = ["lastSeenAt", "firstSeenAt", "status"] as const;
+	const VALID_INST_SORT_COLUMNS = [
+		"lastSeenAt",
+		"firstSeenAt",
+		"status",
+	] as const;
 	const instSortBy = (
 		VALID_INST_SORT_COLUMNS.includes(sp.instSortBy as InstallSortColumn)
 			? sp.instSortBy

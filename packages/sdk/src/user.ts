@@ -1,4 +1,4 @@
-import { type UserInfo, getConfig, setUserInfo } from "./config.js";
+import { getConfig, setUserInfo, type UserInfo } from "./config.js";
 
 export interface SetUserOptions {
 	uid: string;
@@ -10,9 +10,7 @@ export async function setUser(opts: SetUserOptions | null): Promise<void> {
 	try {
 		config = getConfig();
 	} catch {
-		console.warn(
-			"[@zanalytics/sdk] setUser() called before init() — skipped.",
-		);
+		console.warn("[@zanalytics/sdk] setUser() called before init() — skipped.");
 		return;
 	}
 

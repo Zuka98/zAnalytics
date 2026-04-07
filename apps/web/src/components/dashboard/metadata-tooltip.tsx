@@ -18,11 +18,7 @@ export function MetadataTooltip({ data, children }: MetadataTooltipProps) {
 	return (
 		<Tooltip>
 			<TooltipTrigger render={children} />
-			<TooltipContent
-				side="bottom"
-				align="start"
-				className="max-w-md"
-			>
+			<TooltipContent side="bottom" align="start" className="max-w-md">
 				<div className="flex flex-col gap-1 text-xs">
 					{entries.map(([key, value]) => (
 						<div key={key}>

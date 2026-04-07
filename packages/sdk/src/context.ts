@@ -77,7 +77,8 @@ export async function collectContext(): Promise<Context> {
 		touchPoints: navigator.maxTouchPoints,
 		screenWidth: typeof screen !== "undefined" ? screen.width : undefined,
 		screenHeight: typeof screen !== "undefined" ? screen.height : undefined,
-		pixelRatio: typeof window !== "undefined" ? window.devicePixelRatio : undefined,
+		pixelRatio:
+			typeof window !== "undefined" ? window.devicePixelRatio : undefined,
 		colorDepth: typeof screen !== "undefined" ? screen.colorDepth : undefined,
 		browser,
 		browserVersion,

@@ -1,3 +1,4 @@
+export type { Context } from "./context.js";
 export type {
 	FeedbackType,
 	SubmitFeedbackOptions,
@@ -6,10 +7,9 @@ export type {
 } from "./feedback.js";
 export {
 	FEEDBACK_TYPES,
-	UNINSTALL_REASONS,
 	submitFeedback,
+	UNINSTALL_REASONS,
 } from "./feedback.js";
-export type { Context } from "./context.js";
 export type { InitOptions } from "./init.js";
 export { getInstallId, init } from "./init.js";
 export { trackInstall, trackOpen, trackUpdate } from "./lifecycle.js";
